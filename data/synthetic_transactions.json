@@ -1,0 +1,1667 @@
+[
+  {
+    "transaction_id": "TXN-1000",
+    "date": "2026-05-01T09:00:00",
+    "merchant": "Equity Residential",
+    "description": "Monthly Apartment Rent Payment",
+    "amount": 1800.0,
+    "category": "Housing",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1004",
+    "date": "2026-05-01T09:00:00",
+    "merchant": "Equity Residential",
+    "description": "Monthly Apartment Rent Payment",
+    "amount": 1800.0,
+    "category": "Housing",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1016",
+    "date": "2026-05-01T09:43:47",
+    "merchant": "Costco Wholesale",
+    "description": "Purchase at Costco Wholesale",
+    "amount": 162.11,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1018",
+    "date": "2026-05-02T12:51:55",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 133.96,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1017",
+    "date": "2026-05-02T16:12:45",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 20.17,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1020",
+    "date": "2026-05-04T19:29:34",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 45.07,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1019",
+    "date": "2026-05-04T20:21:06",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 8.37,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1001",
+    "date": "2026-05-05T12:00:00",
+    "merchant": "Netflix Subscription",
+    "description": "Monthly Streaming Subscription",
+    "amount": 19.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1005",
+    "date": "2026-05-05T12:00:00",
+    "merchant": "Netflix Subscription",
+    "description": "Monthly Streaming Subscription",
+    "amount": 19.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1022",
+    "date": "2026-05-06T21:23:10",
+    "merchant": "Joe's Pizza",
+    "description": "Purchase at Joe's Pizza",
+    "amount": 10.87,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1021",
+    "date": "2026-05-06T21:23:36",
+    "merchant": "Costco Wholesale",
+    "description": "Purchase at Costco Wholesale",
+    "amount": 251.66,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1023",
+    "date": "2026-05-06T22:43:41",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 16.58,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1002",
+    "date": "2026-05-07T08:30:00",
+    "merchant": "Verizon Fios Internet",
+    "description": "Home Fiber Broadband",
+    "amount": 79.99,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1006",
+    "date": "2026-05-07T08:30:00",
+    "merchant": "Verizon Fios Internet",
+    "description": "Home Fiber Broadband",
+    "amount": 79.99,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1024",
+    "date": "2026-05-08T22:40:44",
+    "merchant": "Walgreens Health",
+    "description": "Purchase at Walgreens Health",
+    "amount": 13.63,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1025",
+    "date": "2026-05-09T11:58:36",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 72.03,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1003",
+    "date": "2026-05-10T14:15:00",
+    "merchant": "Spotify Premium",
+    "description": "Music Family Plan",
+    "amount": 11.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1007",
+    "date": "2026-05-10T14:15:00",
+    "merchant": "Spotify Premium",
+    "description": "Music Family Plan",
+    "amount": 11.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1027",
+    "date": "2026-05-10T14:57:37",
+    "merchant": "Blue Bottle Coffee",
+    "description": "Purchase at Blue Bottle Coffee",
+    "amount": 7.15,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1026",
+    "date": "2026-05-10T22:41:29",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 28.03,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1028",
+    "date": "2026-05-11T08:55:07",
+    "merchant": "Chipotle Mexican Grill",
+    "description": "Purchase at Chipotle Mexican Grill",
+    "amount": 14.84,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1029",
+    "date": "2026-05-14T15:33:16",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 21.65,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1030",
+    "date": "2026-05-14T22:34:48",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 33.39,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1031",
+    "date": "2026-05-15T15:00:46",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 49.63,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1032",
+    "date": "2026-05-16T18:19:53",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 24.62,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1033",
+    "date": "2026-05-16T20:10:34",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 162.24,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1034",
+    "date": "2026-05-17T09:59:23",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 33.15,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1035",
+    "date": "2026-05-17T17:05:05",
+    "merchant": "AMC Theatres",
+    "description": "Purchase at AMC Theatres",
+    "amount": 30.61,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1036",
+    "date": "2026-05-17T18:30:35",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 10.31,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1037",
+    "date": "2026-05-19T19:19:25",
+    "merchant": "CityMD Urgent Care Copay",
+    "description": "Purchase at CityMD Urgent Care Copay",
+    "amount": 51.41,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1038",
+    "date": "2026-05-20T09:15:14",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 78.4,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1040",
+    "date": "2026-05-20T18:31:13",
+    "merchant": "Sweetgreen",
+    "description": "Purchase at Sweetgreen",
+    "amount": 13.12,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1039",
+    "date": "2026-05-20T19:40:03",
+    "merchant": "Costco Wholesale",
+    "description": "Purchase at Costco Wholesale",
+    "amount": 191.88,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1041",
+    "date": "2026-05-21T15:51:26",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 159.36,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1042",
+    "date": "2026-05-24T18:41:41",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 31.46,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1043",
+    "date": "2026-05-26T15:08:27",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 33.47,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1044",
+    "date": "2026-05-28T16:06:03",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 19.29,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1046",
+    "date": "2026-05-29T08:24:16",
+    "merchant": "Steam Games",
+    "description": "Purchase at Steam Games",
+    "amount": 66.52,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1045",
+    "date": "2026-05-29T15:30:13",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 38.55,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1048",
+    "date": "2026-05-30T08:37:47",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 5.78,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1049",
+    "date": "2026-05-30T17:30:32",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 34.82,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1047",
+    "date": "2026-05-30T19:50:35",
+    "merchant": "Steam Games",
+    "description": "Purchase at Steam Games",
+    "amount": 25.71,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1051",
+    "date": "2026-05-31T09:56:36",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 34.0,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1052",
+    "date": "2026-05-31T14:42:37",
+    "merchant": "Shake Shack",
+    "description": "Purchase at Shake Shack",
+    "amount": 20.9,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1050",
+    "date": "2026-05-31T21:11:04",
+    "merchant": "Walgreens Health",
+    "description": "Purchase at Walgreens Health",
+    "amount": 8.1,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1053",
+    "date": "2026-06-01T11:16:25",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 9.38,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1054",
+    "date": "2026-06-03T16:13:32",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 80.11,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1055",
+    "date": "2026-06-04T10:28:53",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 35.03,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1056",
+    "date": "2026-06-05T22:42:06",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 34.65,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1059",
+    "date": "2026-06-06T12:02:00",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 18.78,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1058",
+    "date": "2026-06-06T16:31:16",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 41.99,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1057",
+    "date": "2026-06-06T17:13:45",
+    "merchant": "Blue Bottle Coffee",
+    "description": "Purchase at Blue Bottle Coffee",
+    "amount": 6.94,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1060",
+    "date": "2026-06-07T16:00:07",
+    "merchant": "Joe's Pizza",
+    "description": "Purchase at Joe's Pizza",
+    "amount": 10.98,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1062",
+    "date": "2026-06-09T11:42:06",
+    "merchant": "Sweetgreen",
+    "description": "Purchase at Sweetgreen",
+    "amount": 19.53,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1061",
+    "date": "2026-06-09T16:09:27",
+    "merchant": "Shake Shack",
+    "description": "Purchase at Shake Shack",
+    "amount": 14.15,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1063",
+    "date": "2026-06-10T10:51:51",
+    "merchant": "CityMD Urgent Care Copay",
+    "description": "Purchase at CityMD Urgent Care Copay",
+    "amount": 50.96,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1064",
+    "date": "2026-06-12T19:51:15",
+    "merchant": "Joe's Pizza",
+    "description": "Purchase at Joe's Pizza",
+    "amount": 10.62,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1065",
+    "date": "2026-06-13T15:14:12",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 19.78,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1067",
+    "date": "2026-06-14T09:49:17",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 56.77,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1066",
+    "date": "2026-06-14T11:14:01",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 78.36,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-01",
+    "date": "2026-06-14T21:30:00",
+    "merchant": "Le Bernardin NYC",
+    "description": "Private Dining Room Celebration",
+    "amount": 745.0,
+    "category": "Dining",
+    "is_anomaly": true,
+    "anomaly_type": "amount_spike",
+    "anomaly_details": "Amount $745.00 is 10.3x above typical Dining mean ($72.00)."
+  },
+  {
+    "transaction_id": "TXN-1068",
+    "date": "2026-06-15T13:01:07",
+    "merchant": "CityMD Urgent Care Copay",
+    "description": "Purchase at CityMD Urgent Care Copay",
+    "amount": 51.97,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1070",
+    "date": "2026-06-16T08:45:27",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 44.15,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1069",
+    "date": "2026-06-16T14:38:32",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 14.58,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1073",
+    "date": "2026-06-18T16:08:12",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Purchase at Shell Oil Gas Station",
+    "amount": 39.14,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1071",
+    "date": "2026-06-18T18:58:21",
+    "merchant": "Walgreens Health",
+    "description": "Purchase at Walgreens Health",
+    "amount": 19.75,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1072",
+    "date": "2026-06-18T22:19:32",
+    "merchant": "Quest Diagnostics Copay",
+    "description": "Purchase at Quest Diagnostics Copay",
+    "amount": 40.32,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1074",
+    "date": "2026-06-19T16:53:00",
+    "merchant": "National Grid Gas",
+    "description": "Purchase at National Grid Gas",
+    "amount": 47.27,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1075",
+    "date": "2026-06-20T13:29:28",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 94.43,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1076",
+    "date": "2026-06-21T20:47:10",
+    "merchant": "Shake Shack",
+    "description": "Purchase at Shake Shack",
+    "amount": 17.34,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1077",
+    "date": "2026-06-22T20:12:09",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 16.71,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1078",
+    "date": "2026-06-22T21:49:04",
+    "merchant": "Trader Joe's",
+    "description": "Purchase at Trader Joe's",
+    "amount": 60.05,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1079",
+    "date": "2026-06-23T15:25:15",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 45.42,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1081",
+    "date": "2026-06-25T09:29:08",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 136.48,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1080",
+    "date": "2026-06-25T20:44:33",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 20.6,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1083",
+    "date": "2026-06-26T11:53:40",
+    "merchant": "CityMD Urgent Care Copay",
+    "description": "Purchase at CityMD Urgent Care Copay",
+    "amount": 49.94,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1082",
+    "date": "2026-06-26T16:27:53",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 190.31,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1084",
+    "date": "2026-06-27T15:04:45",
+    "merchant": "Brooklyn Bowl",
+    "description": "Purchase at Brooklyn Bowl",
+    "amount": 54.48,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1085",
+    "date": "2026-06-28T10:09:14",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 16.63,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1086",
+    "date": "2026-06-29T13:34:29",
+    "merchant": "Joe's Pizza",
+    "description": "Purchase at Joe's Pizza",
+    "amount": 9.48,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1087",
+    "date": "2026-06-30T19:01:54",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 57.17,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1008",
+    "date": "2026-07-01T09:00:00",
+    "merchant": "Equity Residential",
+    "description": "Monthly Apartment Rent Payment",
+    "amount": 1800.0,
+    "category": "Housing",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1012",
+    "date": "2026-07-01T09:00:00",
+    "merchant": "Equity Residential",
+    "description": "Monthly Apartment Rent Payment",
+    "amount": 1800.0,
+    "category": "Housing",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1088",
+    "date": "2026-07-01T12:48:24",
+    "merchant": "CityMD Urgent Care Copay",
+    "description": "Purchase at CityMD Urgent Care Copay",
+    "amount": 49.31,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1089",
+    "date": "2026-07-01T20:38:57",
+    "merchant": "Steam Games",
+    "description": "Purchase at Steam Games",
+    "amount": 54.93,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-02A",
+    "date": "2026-07-02T10:14:10",
+    "merchant": "Adobe Creative Cloud",
+    "description": "Annual License Renewal",
+    "amount": 59.99,
+    "category": "Entertainment",
+    "is_anomaly": false,
+    "anomaly_type": "normal_parent",
+    "anomaly_details": "Original transaction."
+  },
+  {
+    "transaction_id": "TXN-ANOM-02B",
+    "date": "2026-07-02T10:17:22",
+    "merchant": "Adobe Creative Cloud",
+    "description": "Annual License Renewal",
+    "amount": 59.99,
+    "category": "Entertainment",
+    "is_anomaly": true,
+    "anomaly_type": "rapid_duplicate",
+    "anomaly_details": "Exact duplicate amount $59.99 billed 192 seconds after previous charge."
+  },
+  {
+    "transaction_id": "TXN-1090",
+    "date": "2026-07-02T13:42:43",
+    "merchant": "Blue Bottle Coffee",
+    "description": "Purchase at Blue Bottle Coffee",
+    "amount": 6.58,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1092",
+    "date": "2026-07-03T08:16:24",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 4.19,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1091",
+    "date": "2026-07-03T18:01:05",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 119.24,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1093",
+    "date": "2026-07-04T12:48:53",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 77.67,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1094",
+    "date": "2026-07-05T08:22:14",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 19.79,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1009",
+    "date": "2026-07-05T12:00:00",
+    "merchant": "Netflix Subscription",
+    "description": "Monthly Streaming Subscription",
+    "amount": 19.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1013",
+    "date": "2026-07-05T12:00:00",
+    "merchant": "Netflix Subscription",
+    "description": "Monthly Streaming Subscription",
+    "amount": 19.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1096",
+    "date": "2026-07-06T10:38:38",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 98.42,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1095",
+    "date": "2026-07-06T18:07:36",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 19.31,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1010",
+    "date": "2026-07-07T08:30:00",
+    "merchant": "Verizon Fios Internet",
+    "description": "Home Fiber Broadband",
+    "amount": 79.99,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1014",
+    "date": "2026-07-07T08:30:00",
+    "merchant": "Verizon Fios Internet",
+    "description": "Home Fiber Broadband",
+    "amount": 79.99,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1099",
+    "date": "2026-07-07T11:06:44",
+    "merchant": "Sweetgreen",
+    "description": "Purchase at Sweetgreen",
+    "amount": 19.76,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1097",
+    "date": "2026-07-07T12:06:37",
+    "merchant": "Amazon.com",
+    "description": "Purchase at Amazon.com",
+    "amount": 74.16,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1098",
+    "date": "2026-07-07T14:25:45",
+    "merchant": "Costco Wholesale",
+    "description": "Purchase at Costco Wholesale",
+    "amount": 248.62,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1100",
+    "date": "2026-07-08T16:27:42",
+    "merchant": "Brooklyn Bowl",
+    "description": "Purchase at Brooklyn Bowl",
+    "amount": 56.77,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1101",
+    "date": "2026-07-08T21:26:52",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 34.02,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1102",
+    "date": "2026-07-09T19:09:27",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 81.35,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1011",
+    "date": "2026-07-10T14:15:00",
+    "merchant": "Spotify Premium",
+    "description": "Music Family Plan",
+    "amount": 11.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1015",
+    "date": "2026-07-10T14:15:00",
+    "merchant": "Spotify Premium",
+    "description": "Music Family Plan",
+    "amount": 11.99,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1103",
+    "date": "2026-07-11T20:30:29",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 159.21,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1104",
+    "date": "2026-07-12T21:59:05",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 3.5,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1105",
+    "date": "2026-07-13T18:24:21",
+    "merchant": "National Grid Gas",
+    "description": "Purchase at National Grid Gas",
+    "amount": 52.99,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1107",
+    "date": "2026-07-15T11:05:15",
+    "merchant": "Quest Diagnostics Copay",
+    "description": "Purchase at Quest Diagnostics Copay",
+    "amount": 40.2,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1106",
+    "date": "2026-07-15T13:17:56",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 28.03,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1109",
+    "date": "2026-07-16T11:19:42",
+    "merchant": "Trader Joe's",
+    "description": "Purchase at Trader Joe's",
+    "amount": 65.36,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1108",
+    "date": "2026-07-16T15:28:50",
+    "merchant": "National Grid Gas",
+    "description": "Purchase at National Grid Gas",
+    "amount": 52.39,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1110",
+    "date": "2026-07-17T13:22:44",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 79.49,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1111",
+    "date": "2026-07-18T13:07:47",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 10.22,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-03",
+    "date": "2026-07-19T03:15:00",
+    "merchant": "BitPay Global Valparaiso CL",
+    "description": "Crypto Checkout Gateway POS",
+    "amount": 289.5,
+    "category": "Shopping",
+    "is_anomaly": true,
+    "anomaly_type": "suspicious_merchant",
+    "anomaly_details": "Unrecognized offshore merchant with no prior history and unusual timestamp (03:15 AM)."
+  },
+  {
+    "transaction_id": "TXN-1112",
+    "date": "2026-07-19T12:46:37",
+    "merchant": "Spotify Premium",
+    "description": "Purchase at Spotify Premium",
+    "amount": 9.97,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1114",
+    "date": "2026-07-20T10:40:55",
+    "merchant": "Walgreens Health",
+    "description": "Purchase at Walgreens Health",
+    "amount": 24.72,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1113",
+    "date": "2026-07-20T12:00:45",
+    "merchant": "Quest Diagnostics Copay",
+    "description": "Purchase at Quest Diagnostics Copay",
+    "amount": 39.45,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1115",
+    "date": "2026-07-20T13:11:03",
+    "merchant": "Steam Games",
+    "description": "Purchase at Steam Games",
+    "amount": 35.8,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1116",
+    "date": "2026-07-21T18:03:09",
+    "merchant": "Steam Games",
+    "description": "Purchase at Steam Games",
+    "amount": 49.32,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1117",
+    "date": "2026-07-23T20:39:14",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 35.15,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1118",
+    "date": "2026-07-24T17:27:19",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 37.49,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1119",
+    "date": "2026-07-24T20:13:40",
+    "merchant": "CVS Pharmacy",
+    "description": "Purchase at CVS Pharmacy",
+    "amount": 38.63,
+    "category": "Healthcare",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1120",
+    "date": "2026-07-25T09:10:00",
+    "merchant": "Amazon.com",
+    "description": "Purchase at Amazon.com",
+    "amount": 38.26,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1121",
+    "date": "2026-07-26T12:45:18",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 145.8,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1123",
+    "date": "2026-07-27T10:58:17",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 56.65,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1122",
+    "date": "2026-07-27T18:51:59",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 138.7,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1125",
+    "date": "2026-07-28T19:25:17",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Purchase at Shell Oil Gas Station",
+    "amount": 29.37,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1124",
+    "date": "2026-07-28T19:52:36",
+    "merchant": "Trader Joe's",
+    "description": "Purchase at Trader Joe's",
+    "amount": 60.19,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1126",
+    "date": "2026-07-29T12:01:05",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 31.64,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1127",
+    "date": "2026-07-30T20:43:52",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 158.16,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1128",
+    "date": "2026-07-31T22:17:11",
+    "merchant": "Whole Foods Market",
+    "description": "Purchase at Whole Foods Market",
+    "amount": 107.42,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1129",
+    "date": "2026-08-01T14:21:20",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 40.09,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1131",
+    "date": "2026-08-01T15:05:20",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 15.97,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1130",
+    "date": "2026-08-01T19:31:18",
+    "merchant": "Amazon.com",
+    "description": "Purchase at Amazon.com",
+    "amount": 83.84,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1132",
+    "date": "2026-08-02T16:23:39",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 33.17,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1134",
+    "date": "2026-08-03T08:40:38",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Purchase at Shell Oil Gas Station",
+    "amount": 59.41,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1133",
+    "date": "2026-08-03T16:08:59",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 12.79,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1135",
+    "date": "2026-08-04T21:58:07",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 57.99,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1136",
+    "date": "2026-08-04T22:45:18",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 120.39,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1137",
+    "date": "2026-08-05T14:12:58",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Purchase at Shell Oil Gas Station",
+    "amount": 39.18,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-04",
+    "date": "2026-08-05T15:45:00",
+    "merchant": "Costco Wholesale",
+    "description": "Commercial Kitchen Pantry Stocking",
+    "amount": 490.8,
+    "category": "Groceries",
+    "is_anomaly": true,
+    "anomaly_type": "amount_spike",
+    "anomaly_details": "Single transaction consumed 89.2% of total monthly grocery budget."
+  },
+  {
+    "transaction_id": "TXN-1138",
+    "date": "2026-08-06T20:54:26",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 92.11,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1139",
+    "date": "2026-08-07T17:42:31",
+    "merchant": "Brooklyn Bowl",
+    "description": "Purchase at Brooklyn Bowl",
+    "amount": 90.79,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1141",
+    "date": "2026-08-08T14:02:20",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 13.35,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1140",
+    "date": "2026-08-08T16:24:29",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 29.54,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1143",
+    "date": "2026-08-09T21:28:06",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 109.23,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1142",
+    "date": "2026-08-09T21:41:09",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 7.08,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1144",
+    "date": "2026-08-10T18:09:04",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 126.64,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1145",
+    "date": "2026-08-11T09:54:21",
+    "merchant": "Lyft Rides",
+    "description": "Purchase at Lyft Rides",
+    "amount": 23.28,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-05",
+    "date": "2026-08-12T11:00:00",
+    "merchant": "ConEdison Electric",
+    "description": "Monthly Grid Residential Utility Bill",
+    "amount": 412.5,
+    "category": "Utilities",
+    "is_anomaly": true,
+    "anomaly_type": "amount_spike",
+    "anomaly_details": "Bill amount $412.50 is 3.58x normal electricity baseline."
+  },
+  {
+    "transaction_id": "TXN-1147",
+    "date": "2026-08-12T18:58:18",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 119.74,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1146",
+    "date": "2026-08-12T19:56:48",
+    "merchant": "Brooklyn Bowl",
+    "description": "Purchase at Brooklyn Bowl",
+    "amount": 50.48,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1149",
+    "date": "2026-08-13T08:02:20",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 24.2,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1150",
+    "date": "2026-08-13T10:15:33",
+    "merchant": "Netflix Subscription",
+    "description": "Purchase at Netflix Subscription",
+    "amount": 19.42,
+    "category": "Entertainment",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1148",
+    "date": "2026-08-13T18:45:55",
+    "merchant": "Amazon.com",
+    "description": "Purchase at Amazon.com",
+    "amount": 54.68,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1151",
+    "date": "2026-08-14T11:31:58",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 118.03,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1152",
+    "date": "2026-08-15T18:00:57",
+    "merchant": "Trattoria Bella",
+    "description": "Purchase at Trattoria Bella",
+    "amount": 79.88,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1154",
+    "date": "2026-08-16T12:44:18",
+    "merchant": "Whole Foods Market",
+    "description": "Purchase at Whole Foods Market",
+    "amount": 101.39,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1153",
+    "date": "2026-08-16T14:54:30",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 23.65,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1156",
+    "date": "2026-08-18T19:49:42",
+    "merchant": "Target Stores",
+    "description": "Purchase at Target Stores",
+    "amount": 85.1,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1155",
+    "date": "2026-08-18T20:22:14",
+    "merchant": "Verizon Fios Internet",
+    "description": "Purchase at Verizon Fios Internet",
+    "amount": 80.6,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-06A",
+    "date": "2026-08-18T22:05:00",
+    "merchant": "Uber Technologies",
+    "description": "Uber Ride Downtown",
+    "amount": 26.5,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-06B",
+    "date": "2026-08-18T22:15:00",
+    "merchant": "Uber Technologies",
+    "description": "Uber Ride Cancellation Fee",
+    "amount": 10.0,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-06C",
+    "date": "2026-08-18T22:25:00",
+    "merchant": "Uber Technologies",
+    "description": "Uber XL Airport Transfer",
+    "amount": 78.0,
+    "category": "Transport",
+    "is_anomaly": true,
+    "anomaly_type": "frequency_burst",
+    "anomaly_details": "Third consecutive rideshare charge in under 20 minutes totaling $114.50."
+  },
+  {
+    "transaction_id": "TXN-1157",
+    "date": "2026-08-19T08:19:50",
+    "merchant": "Joe's Pizza",
+    "description": "Purchase at Joe's Pizza",
+    "amount": 6.43,
+    "category": "Dining",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1158",
+    "date": "2026-08-19T09:58:18",
+    "merchant": "ConEdison Electric",
+    "description": "Purchase at ConEdison Electric",
+    "amount": 124.18,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1159",
+    "date": "2026-08-20T22:23:33",
+    "merchant": "National Grid Gas",
+    "description": "Purchase at National Grid Gas",
+    "amount": 25.77,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1160",
+    "date": "2026-08-21T15:51:18",
+    "merchant": "Uber Technologies",
+    "description": "Purchase at Uber Technologies",
+    "amount": 5.47,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1162",
+    "date": "2026-08-22T08:16:34",
+    "merchant": "Apple Store Digital",
+    "description": "Purchase at Apple Store Digital",
+    "amount": 4.49,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-07",
+    "date": "2026-08-22T14:20:00",
+    "merchant": "Apple Store Fifth Ave",
+    "description": "Hardware Laptop Repair & Memory Upgrade",
+    "amount": 1299.0,
+    "category": "Shopping",
+    "is_anomaly": true,
+    "anomaly_type": "amount_spike",
+    "anomaly_details": "Amount $1,299.00 is 4.33x the entire monthly shopping allowance ($300)."
+  },
+  {
+    "transaction_id": "TXN-1161",
+    "date": "2026-08-22T20:14:55",
+    "merchant": "MTA Subway Transit",
+    "description": "Purchase at MTA Subway Transit",
+    "amount": 33.94,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1163",
+    "date": "2026-08-24T13:06:43",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 109.51,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1164",
+    "date": "2026-08-25T09:40:52",
+    "merchant": "Costco Wholesale",
+    "description": "Purchase at Costco Wholesale",
+    "amount": 226.17,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1165",
+    "date": "2026-08-26T08:02:19",
+    "merchant": "Uniqlo Apparel",
+    "description": "Purchase at Uniqlo Apparel",
+    "amount": 93.7,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1167",
+    "date": "2026-08-27T10:56:26",
+    "merchant": "Best Buy Electronics",
+    "description": "Purchase at Best Buy Electronics",
+    "amount": 116.7,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1168",
+    "date": "2026-08-27T12:02:44",
+    "merchant": "Amazon.com",
+    "description": "Purchase at Amazon.com",
+    "amount": 99.9,
+    "category": "Shopping",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1166",
+    "date": "2026-08-27T14:29:23",
+    "merchant": "Trader Joe's",
+    "description": "Purchase at Trader Joe's",
+    "amount": 56.76,
+    "category": "Groceries",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-1169",
+    "date": "2026-08-28T13:03:25",
+    "merchant": "City Water Board",
+    "description": "Purchase at City Water Board",
+    "amount": 49.71,
+    "category": "Utilities",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-08A",
+    "date": "2026-08-28T17:40:00",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Automated Fuel Dispenser",
+    "amount": 55.0,
+    "category": "Transport",
+    "is_anomaly": false
+  },
+  {
+    "transaction_id": "TXN-ANOM-08B",
+    "date": "2026-08-28T17:42:30",
+    "merchant": "Shell Oil Gas Station",
+    "description": "Automated Fuel Dispenser",
+    "amount": 55.0,
+    "category": "Transport",
+    "is_anomaly": true,
+    "anomaly_type": "rapid_duplicate",
+    "anomaly_details": "Duplicate pump transaction of $55.00 occurring 150 seconds after first pump authorization."
+  },
+  {
+    "transaction_id": "TXN-1170",
+    "date": "2026-08-29T18:38:01",
+    "merchant": "Local Farmers Market",
+    "description": "Purchase at Local Farmers Market",
+    "amount": 23.33,
+    "category": "Groceries",
+    "is_anomaly": false
+  }
+]

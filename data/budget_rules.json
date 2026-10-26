@@ -1,0 +1,67 @@
+{
+  "monthly_budget_limits": {
+    "Housing": 1800.0,
+    "Groceries": 550.0,
+    "Dining": 400.0,
+    "Utilities": 250.0,
+    "Transport": 200.0,
+    "Healthcare": 150.0,
+    "Entertainment": 150.0,
+    "Shopping": 300.0
+  },
+  "category_metadata": {
+    "Housing": {
+      "type": "non_discretionary",
+      "flexibility_weight": 0.0,
+      "description": "Rent/Mortgage and base property costs. Strictly protected from budget cuts."
+    },
+    "Utilities": {
+      "type": "non_discretionary",
+      "flexibility_weight": 0.1,
+      "description": "Electricity, gas, water, internet. Inelastic basic necessities."
+    },
+    "Healthcare": {
+      "type": "non_discretionary",
+      "flexibility_weight": 0.1,
+      "description": "Medical, dental, pharmacy prescriptions. Protected health spending."
+    },
+    "Groceries": {
+      "type": "semi_discretionary",
+      "flexibility_weight": 0.3,
+      "description": "Essential food supplies. Can be trimmed slightly if necessary."
+    },
+    "Transport": {
+      "type": "semi_discretionary",
+      "flexibility_weight": 0.4,
+      "description": "Fuel, public transit, rideshare."
+    },
+    "Shopping": {
+      "type": "discretionary",
+      "flexibility_weight": 0.8,
+      "description": "Apparel, electronics, personal goods. Highly flexible."
+    },
+    "Dining": {
+      "type": "discretionary",
+      "flexibility_weight": 0.9,
+      "description": "Restaurants, takeout, cafes, bars. Prime candidate for deficit trimming."
+    },
+    "Entertainment": {
+      "type": "discretionary",
+      "flexibility_weight": 1.0,
+      "description": "Movies, concerts, streaming services, hobbies. Highest reallocation flexibility."
+    }
+  },
+  "alert_thresholds": {
+    "warning_pct": 80.0,
+    "critical_pct": 100.0,
+    "anomaly_multiplier_standard": 2.5,
+    "anomaly_multiplier_critical": 4.0,
+    "duplicate_window_seconds": 600
+  },
+  "reallocation_rules": {
+    "max_cut_pct_discretionary": 60.0,
+    "max_cut_pct_semi_discretionary": 25.0,
+    "max_cut_pct_non_discretionary": 0.0,
+    "priority_order_for_cuts": ["Entertainment", "Dining", "Shopping", "Transport", "Groceries"]
+  }
+}

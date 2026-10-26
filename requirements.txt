@@ -1,0 +1,5 @@
+# Autonomous Financial Reconciliation Agent
+# The core application, tools, benchmark evaluator, CLI, and server run with 0 external dependencies on Python standard library.
+# Optional dependencies for live Google Gemini API client or rich formatting:
+google-genai>=1.0.0
+pytest>=7.0.0

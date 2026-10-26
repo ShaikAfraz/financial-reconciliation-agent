@@ -1,0 +1,553 @@
+[
+  {
+    "scenario_id": "SCENARIO-01",
+    "title": "Standard Coffee & Cafe Purchase Reconciliation",
+    "description": "User wants to reconcile a routine morning coffee charge and verify budget status.",
+    "input_prompt": "I bought coffee this morning for $6.75 at Blue Bottle Coffee. Reconcile this transaction, verify if it's anomalous, and check how my Dining budget is holding up.",
+    "context": {
+      "transaction": {
+        "merchant": "Blue Bottle Coffee",
+        "description": "Pour-over coffee",
+        "amount": 6.75,
+        "date": "2026-08-15T09:12:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Dining",
+      "is_anomaly": false,
+      "budget_status": ["OK", "WARNING"],
+      "must_contain": ["Dining", "normal", "budget"]
+    },
+    "injected_error": {
+      "corrupted_category": "Utilities",
+      "rationale": "Miscategorizes coffee as a utility bill, checking electric/gas budget instead of dining."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-02",
+    "title": "Severe Restaurant Spike Anomaly Detection",
+    "description": "Reconcile a $745 celebration dinner and check budget impact.",
+    "input_prompt": "Please review this $745.00 charge from Le Bernardin NYC on 2026-06-14. Categorize it, check for anomalies, and see if I exceeded my budget.",
+    "context": {
+      "transaction": {
+        "merchant": "Le Bernardin NYC",
+        "description": "Private Dining Room Celebration",
+        "amount": 745.00,
+        "date": "2026-06-14T21:30:00"
+      },
+      "month": "2026-06"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Dining",
+      "is_anomaly": true,
+      "anomaly_type": "amount_spike",
+      "budget_status": ["EXCEEDED"],
+      "must_contain": ["anomaly", "exceeded", "Dining"]
+    },
+    "injected_error": {
+      "corrupted_category": "Shopping",
+      "rationale": "Miscategorizes fine dining as shopping, corrupting dining budget variance and anomaly baselines."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-03",
+    "title": "Rapid Duplicate Subscription Charge",
+    "description": "User spots a second charge from Adobe within 3 minutes.",
+    "input_prompt": "I noticed a $59.99 Adobe Creative Cloud charge at 10:17 AM right after a 10:14 AM charge. Can you categorize it and check if it's an anomaly?",
+    "context": {
+      "transaction": {
+        "merchant": "Adobe Creative Cloud",
+        "description": "Annual License Renewal",
+        "amount": 59.99,
+        "date": "2026-07-02T10:17:22"
+      },
+      "previous_transaction": {
+        "merchant": "Adobe Creative Cloud",
+        "amount": 59.99,
+        "date": "2026-07-02T10:14:10"
+      },
+      "month": "2026-07"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "flag_anomaly",
+        "categorize_transaction"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Entertainment",
+      "is_anomaly": true,
+      "anomaly_type": "rapid_duplicate",
+      "must_contain": ["duplicate", "Entertainment", "refund"]
+    },
+    "injected_error": {
+      "corrupted_category": "Healthcare",
+      "rationale": "Miscategorizes software license as healthcare copay, muddying medical records."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-04",
+    "title": "Monthly Category Variance Overview",
+    "description": "User requests monthly category variance breakdown for May 2026.",
+    "input_prompt": "Calculate my category spending variance for May 2026 across all budget categories.",
+    "context": {
+      "month": "2026-05"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["variance", "budget", "surplus", "deficit"]
+    },
+    "injected_error": {
+      "corrupted_category": "Transport",
+      "rationale": "Distorts initial variance calculation with misplaced $300 transit charge."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-05",
+    "title": "Month-End Budget Reallocation Plan",
+    "description": "User has deficits in Dining and Shopping; wants to balance budget using surpluses.",
+    "input_prompt": "Analyze my spending variance for July 2026 and propose a budget reallocation to cover any over-budget categories.",
+    "context": {
+      "month": "2026-07"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["reallocation", "transfer", "surplus", "deficit"]
+    },
+    "injected_error": {
+      "corrupted_category": "Housing",
+      "rationale": "Injects error treating rent as discretionary surplus, violating budget safety rules."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-06",
+    "title": "Mid-Month Dining Overspend and Rebalancing",
+    "description": "A $120 dinner at Trattoria Bella pushes Dining over budget, requiring immediate rebalancing.",
+    "input_prompt": "I spent $120.00 at Trattoria Bella for dinner. Categorize this, check my budget status, compute current variances, and propose where I can reallocate funds from.",
+    "context": {
+      "transaction": {
+        "merchant": "Trattoria Bella",
+        "description": "Family dinner",
+        "amount": 120.00,
+        "date": "2026-08-16T20:15:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "check_against_budget_rule",
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "calculate_category_variance",
+        "check_against_budget_rule",
+        "propose_reallocation"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Dining",
+      "must_contain": ["Dining", "reallocate", "variance"]
+    },
+    "injected_error": {
+      "corrupted_category": "Groceries",
+      "rationale": "Classifies fine restaurant dinner as groceries, leaving dining deficit hidden."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-07",
+    "title": "Unrecognized Foreign Crypto POS Merchant",
+    "description": "Suspicious $289.50 charge from BitPay Global Valparaiso at 3:15 AM.",
+    "input_prompt": "There's a $289.50 transaction from BitPay Global Valparaiso CL at 03:15 AM. Categorize it and flag if it's anomalous.",
+    "context": {
+      "transaction": {
+        "merchant": "BitPay Global Valparaiso CL",
+        "description": "Crypto Checkout Gateway POS",
+        "amount": 289.50,
+        "date": "2026-07-19T03:15:00"
+      },
+      "month": "2026-07"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "flag_anomaly",
+        "categorize_transaction"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "is_anomaly": true,
+      "anomaly_type": "suspicious_merchant",
+      "must_contain": ["suspicious", "merchant", "fraud", "Shopping"]
+    },
+    "injected_error": {
+      "corrupted_category": "Utilities",
+      "rationale": "Mistakes unknown foreign crypto payment for standard utility bill."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-08",
+    "title": "Major Electricity Bill Spike Reconcile",
+    "description": "ConEdison bill is $412.50 vs $115 average.",
+    "input_prompt": "My electric bill from ConEdison Electric came in at $412.50. Reconcile this: categorize, check for anomalies, and check my utilities budget.",
+    "context": {
+      "transaction": {
+        "merchant": "ConEdison Electric",
+        "description": "Monthly Grid Residential Utility Bill",
+        "amount": 412.50,
+        "date": "2026-08-12T11:00:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Utilities",
+      "is_anomaly": true,
+      "budget_status": ["EXCEEDED"],
+      "must_contain": ["Utilities", "anomaly", "exceeded"]
+    },
+    "injected_error": {
+      "corrupted_category": "Entertainment",
+      "rationale": "Miscategorizes power grid bill as entertainment, checking wrong budget ceiling."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-09",
+    "title": "Severe Deficit Reallocation Request",
+    "description": "When deficits exceed available discretionary surpluses, agent must warn rather than invent money.",
+    "input_prompt": "Review my month-end variance for June 2026 and rebalance all deficit categories.",
+    "context": {
+      "month": "2026-06"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["deficit", "surplus", "reallocation"]
+    },
+    "injected_error": {
+      "corrupted_category": "Healthcare",
+      "rationale": "Swaps deficit source, generating unfeasible medical cuts."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-10",
+    "title": "Insufficient Information Handling",
+    "description": "User gives incomplete prompt with missing merchant and amount. Agent must decline to guess.",
+    "input_prompt": "I bought some stuff yesterday at a store. Can you categorize it and check my budget?",
+    "context": {},
+    "expected_tool_sequence": [],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["merchant", "amount", "details", "information"]
+    },
+    "injected_error": {
+      "corrupted_category": "Shopping",
+      "rationale": "Blindly guesses shopping without required data."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-11",
+    "title": "Routine Grocery Purchase",
+    "description": "Routine Trader Joe's grocery purchase of $78.40.",
+    "input_prompt": "Reconcile my $78.40 purchase at Trader Joe's from yesterday. Categorize it, check for anomalies, and see my Groceries budget status.",
+    "context": {
+      "transaction": {
+        "merchant": "Trader Joe's",
+        "description": "Weekly grocery shopping",
+        "amount": 78.40,
+        "date": "2026-08-14T17:30:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Groceries",
+      "is_anomaly": false,
+      "must_contain": ["Groceries", "normal", "budget"]
+    },
+    "injected_error": {
+      "corrupted_category": "Dining",
+      "rationale": "Classifies supermarket trip as dining out, artificially reducing dining headroom."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-12",
+    "title": "Balanced Month Audit with Zero Reallocation",
+    "description": "Month of May has no deficits; agent should confirm balanced status without unneeded cuts.",
+    "input_prompt": "Audit my category variances for May 2026 and propose reallocations if needed.",
+    "context": {
+      "month": "2026-05"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["variance", "surplus", "balanced"]
+    },
+    "injected_error": {
+      "corrupted_category": "Shopping",
+      "rationale": "Manufactures fake deficit, triggering false reallocation movements."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-13",
+    "title": "Burst Rideshare Surge Anomaly",
+    "description": "3rd consecutive Uber charge within 20 minutes totaling $78.00.",
+    "input_prompt": "I was charged $78.00 for Uber XL Airport Transfer shortly after two other Uber charges tonight. Please categorize, check for anomalies, and check my Transport budget.",
+    "context": {
+      "transaction": {
+        "merchant": "Uber Technologies",
+        "description": "Uber XL Airport Transfer",
+        "amount": 78.00,
+        "date": "2026-08-18T22:25:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Transport",
+      "is_anomaly": true,
+      "must_contain": ["Transport", "anomaly", "burst"]
+    },
+    "injected_error": {
+      "corrupted_category": "Entertainment",
+      "rationale": "Fails to attribute transit surge to transport category."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-14",
+    "title": "Protected Non-Discretionary Category Reallocation Rule",
+    "description": "Ensures Housing and Healthcare are never deducted to cover deficit.",
+    "input_prompt": "I have an overspend in Shopping for August 2026. Calculate the variances and propose a reallocation strictly adhering to non-discretionary protection rules.",
+    "context": {
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["reallocation", "discretionary", "Entertainment"]
+    },
+    "injected_error": {
+      "corrupted_category": "Housing",
+      "rationale": "Illegally attempts to deduct $300 from rent to fund shopping spree."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-15",
+    "title": "Extraordinary Electronics Purchase Reconciliation",
+    "description": "$1,299 hardware repair & purchase at Apple Store Fifth Ave.",
+    "input_prompt": "Reconcile my $1,299.00 Apple Store purchase on 2026-08-22: categorize, check for anomalies, assess budget impact, calculate variances, and propose reallocation.",
+    "context": {
+      "transaction": {
+        "merchant": "Apple Store Fifth Ave",
+        "description": "Hardware Laptop Repair & Memory Upgrade",
+        "amount": 1299.00,
+        "date": "2026-08-22T14:20:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly",
+      "check_against_budget_rule",
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "categorize_transaction",
+        "check_against_budget_rule",
+        "flag_anomaly",
+        "calculate_category_variance",
+        "propose_reallocation"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Shopping",
+      "is_anomaly": true,
+      "budget_status": ["EXCEEDED"],
+      "must_contain": ["Shopping", "anomaly", "exceeded", "reallocation"]
+    },
+    "injected_error": {
+      "corrupted_category": "Healthcare",
+      "rationale": "Treats $1,299 laptop upgrade as hospital copay, catastrophic category error."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-16",
+    "title": "Rapid Double Gas Station Swipe Anomaly",
+    "description": "Double swipe of $55.00 at Shell gas station within 2.5 minutes.",
+    "input_prompt": "I see a second $55.00 charge at Shell Oil Gas Station at 17:42 right after one at 17:40. Categorize it and check if it's anomalous.",
+    "context": {
+      "transaction": {
+        "merchant": "Shell Oil Gas Station",
+        "description": "Automated Fuel Dispenser",
+        "amount": 55.00,
+        "date": "2026-08-28T17:42:30"
+      },
+      "previous_transaction": {
+        "merchant": "Shell Oil Gas Station",
+        "amount": 55.00,
+        "date": "2026-08-28T17:40:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "flag_anomaly",
+        "categorize_transaction"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Transport",
+      "is_anomaly": true,
+      "anomaly_type": "rapid_duplicate",
+      "must_contain": ["duplicate", "Transport", "gas"]
+    },
+    "injected_error": {
+      "corrupted_category": "Groceries",
+      "rationale": "Miscategorizes gas station fuel as grocery supplies."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-17",
+    "title": "Cross-Category Rebalancing to Cover Groceries",
+    "description": "Groceries are in deficit due to bulk pantry stocking; rebalance from Entertainment surplus.",
+    "input_prompt": "Please calculate the August 2026 category variances and propose a reallocation to absorb the Groceries overspend.",
+    "context": {
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "calculate_category_variance",
+      "propose_reallocation"
+    ],
+    "valid_alternative_sequences": [],
+    "expected_recommendation_criteria": {
+      "must_contain": ["Groceries", "reallocation", "surplus", "deficit"]
+    },
+    "injected_error": {
+      "corrupted_category": "Utilities",
+      "rationale": "Attributes grocery deficit to utilities, prompting invalid reallocation logic."
+    }
+  },
+  {
+    "scenario_id": "SCENARIO-18",
+    "title": "Ambiguous Vendor Description Classification",
+    "description": "Merchant is 'NYC AMZN MKT' with non-descript summary. Categorize with confidence score.",
+    "input_prompt": "Categorize this transaction and check if it's an anomaly: $32.40 to 'NYC AMZN MKT' for 'Online Retail Order'.",
+    "context": {
+      "transaction": {
+        "merchant": "NYC AMZN MKT",
+        "description": "Online Retail Order",
+        "amount": 32.40,
+        "date": "2026-08-20T13:10:00"
+      },
+      "month": "2026-08"
+    },
+    "expected_tool_sequence": [
+      "categorize_transaction",
+      "flag_anomaly"
+    ],
+    "valid_alternative_sequences": [
+      [
+        "flag_anomaly",
+        "categorize_transaction"
+      ]
+    ],
+    "expected_recommendation_criteria": {
+      "category": "Shopping",
+      "is_anomaly": false,
+      "must_contain": ["Shopping", "normal", "confidence"]
+    },
+    "injected_error": {
+      "corrupted_category": "Transport",
+      "rationale": "Treats online Amazon order as subway transit fare."
+    }
+  }
+]

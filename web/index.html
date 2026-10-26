@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veritas Treasury • Autonomous Financial Reconciliation & Audit Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Ambient Light Mesh Background -->
+  <div class="ambient-glow ambient-glow-1"></div>
+  <div class="ambient-glow ambient-glow-2"></div>
+  <div class="ambient-glow ambient-glow-3"></div>
+
+  <!-- Executive Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-crest">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V7L12 2Z" fill="url(#emerald-crest)" stroke="#34d399" stroke-width="1.2"/>
+          <path d="M12 6L7 11H10V17H14V11H17L12 6Z" fill="#ffffff" fill-opacity="0.95"/>
+          <defs>
+            <linearGradient id="emerald-crest" x1="3" y1="2" x2="21" y2="24" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#047857"/>
+              <stop offset="0.5" stop-color="#10b981"/>
+              <stop offset="1" stop-color="#059669"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">VERITAS TREASURY <span class="brand-edition">EMERALD EDITION</span></div>
+        <div class="brand-subtitle">Autonomous Multi-Turn Ledger Reconciliation & Audit Suite</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-button active" data-tab="console" role="tab" aria-selected="true">
+        <span class="tab-icon">◈</span>
+        <span class="tab-label">Reconciliation Console</span>
+      </button>
+      <button class="tab-button" data-tab="eval" role="tab" aria-selected="false">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label">Pipeline Verification</span>
+      </button>
+      <button class="tab-button" data-tab="error" role="tab" aria-selected="false">
+        <span class="tab-icon">🛡</span>
+        <span class="tab-label">Error Cascade Lab</span>
+      </button>
+      <button class="tab-button" data-tab="ledger" role="tab" aria-selected="false">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Banking Ledger</span>
+      </button>
+      <button class="tab-button" data-tab="tools" role="tab" aria-selected="false">
+        <span class="tab-icon">⚙</span>
+        <span class="tab-label">Tool Registry</span>
+      </button>
+    </nav>
+
+    <!-- Institutional Live Status -->
+    <div class="header-status">
+      <div class="status-badge online">
+        <span class="status-dot pulse-emerald"></span>
+        <span class="status-text">SQLite Core Active</span>
+      </div>
+      <div class="status-badge auditor-badge">
+        <span class="status-dot emerald-subtle"></span>
+        <span>Auditor #8492</span>
+      </div>
+      <div class="status-badge clock-badge">
+        <span id="live-clock">--:--:-- UTC</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-container">
+
+    <!-- TAB 1: RECONCILIATION CONSOLE -->
+    <section id="tab-console" class="tab-content active" role="tabpanel">
+
+      <!-- Executive Interactive Showcase Carousel -->
+      <div class="carousel-container" id="scenario-carousel">
+        <div class="carousel-header">
+          <div class="carousel-title-group">
+            <span class="carousel-eyebrow">
+              <span class="pulse-emerald-mini"></span>
+              CURATED RECONCILIATION BENCHMARKS
+            </span>
+            <h2 class="carousel-title">Core Capability Showcase & Live Workflows</h2>
+          </div>
+          <div class="carousel-controls">
+            <button class="carousel-nav-btn" id="carousel-prev" aria-label="Previous Showcase Slide">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="carousel-dots" id="carousel-dots"></div>
+            <button class="carousel-nav-btn" id="carousel-next" aria-label="Next Showcase Slide">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="carousel-track-viewport">
+          <div class="carousel-track" id="carousel-track">
+            
+            <!-- Slide 1 -->
+            <div class="carousel-slide" data-scenario-id="SCENARIO-01">
+              <div class="slide-card">
+                <div class="slide-badge-row">
+                  <span class="slide-pill emerald">Routine Clearing</span>
+                  <span class="slide-meta-tag">POS Descriptor Normalization</span>
+                </div>
+                <div class="slide-content">
+                  <h3 class="slide-heading">Square POS Coffee Clearing</h3>
+                  <p class="slide-desc">Strips encrypted merchant terminal headers (<code>SQ *BLUE BOTTLE COFFEE - WILLIAMSBURG</code>), validates against dining envelopes, and confirms $6.75 spend within monthly caps.</p>
+                </div>
+                <div class="slide-stats-row">
+                  <div class="slide-stat"><span class="stat-lbl">Amount</span><span class="stat-val">$6.75</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Confidence</span><span class="stat-val emerald-txt">95%</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Resolution</span><span class="stat-val">Healthy</span></div>
+                </div>
+                <button class="btn-slide-action" onclick="selectAndRunCarouselScenario('SCENARIO-01')">
+                  <span>Load Into Reconciler</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 2 -->
+            <div class="carousel-slide" data-scenario-id="SCENARIO-02">
+              <div class="slide-card">
+                <div class="slide-badge-row">
+                  <span class="slide-pill amber">Anomaly Defense</span>
+                  <span class="slide-meta-tag">3.0x Baseline Spike</span>
+                </div>
+                <div class="slide-content">
+                  <h3 class="slide-heading">Severe Dining Budget Blowout</h3>
+                  <p class="slide-desc">Detects an extreme $340.00 luxury restaurant charge exceeding the category standard deviation. Immediately sounds the anomaly alarm and audits remaining envelope headroom.</p>
+                </div>
+                <div class="slide-stats-row">
+                  <div class="slide-stat"><span class="stat-lbl">Amount</span><span class="stat-val">$340.00</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Spike Ratio</span><span class="stat-val amber-txt">3.8x Avg</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Alert</span><span class="stat-val amber-txt">Critical</span></div>
+                </div>
+                <button class="btn-slide-action" onclick="selectAndRunCarouselScenario('SCENARIO-02')">
+                  <span>Load Into Reconciler</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="carousel-slide" data-scenario-id="SCENARIO-06">
+              <div class="slide-card">
+                <div class="slide-badge-row">
+                  <span class="slide-pill mint">Priority Rebalancing</span>
+                  <span class="slide-meta-tag">Surplus-to-Deficit Harvesting</span>
+                </div>
+                <div class="slide-content">
+                  <h3 class="slide-heading">Automated Budget Rebalancing</h3>
+                  <p class="slide-desc">When dining overspends, the agent dynamically harvests unencumbered surplus from Entertainment and Shopping while strictly locking Rent and Healthcare.</p>
+                </div>
+                <div class="slide-stats-row">
+                  <div class="slide-stat"><span class="stat-lbl">Overspend</span><span class="stat-val">$85.00</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Harvest Pool</span><span class="stat-val mint-txt">Entertainment</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Floor Locked</span><span class="stat-val">Housing (0.0)</span></div>
+                </div>
+                <button class="btn-slide-action" onclick="selectAndRunCarouselScenario('SCENARIO-06')">
+                  <span>Load Into Reconciler</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 4 -->
+            <div class="carousel-slide" data-scenario-id="SCENARIO-08">
+              <div class="slide-card">
+                <div class="slide-badge-row">
+                  <span class="slide-pill rose">Fraud Prevention</span>
+                  <span class="slide-meta-tag">Rapid Duplicate Burst</span>
+                </div>
+                <div class="slide-content">
+                  <h3 class="slide-heading">Sub-10m Duplicate Charge Defense</h3>
+                  <p class="slide-desc">Identifies identical $64.20 transactions swiped within 4 minutes at the same fuel pump, neutralizing automated merchant gateway double-billings.</p>
+                </div>
+                <div class="slide-stats-row">
+                  <div class="slide-stat"><span class="stat-lbl">Interval</span><span class="stat-val rose-txt">&lt; 4 Mins</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Amount</span><span class="stat-val">$64.20 x2</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Detection</span><span class="stat-val rose-txt">Duplicate Flag</span></div>
+                </div>
+                <button class="btn-slide-action" onclick="selectAndRunCarouselScenario('SCENARIO-08')">
+                  <span>Load Into Reconciler</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Slide 5 -->
+            <div class="carousel-slide" data-scenario-id="SCENARIO-04">
+              <div class="slide-card">
+                <div class="slide-badge-row">
+                  <span class="slide-pill sage">Zero Hallucination</span>
+                  <span class="slide-meta-tag">Uncertainty State Handling</span>
+                </div>
+                <div class="slide-content">
+                  <h3 class="slide-heading">Ambiguous Vendor Disambiguation</h3>
+                  <p class="slide-desc">When confronted with ambiguous payment strings (<code>PAYPAL *MISC-91024</code>), the agent explicitly declines to guess, preserving mathematical ledger integrity.</p>
+                </div>
+                <div class="slide-stats-row">
+                  <div class="slide-stat"><span class="stat-lbl">Confidence</span><span class="stat-val amber-txt">&lt; 60%</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Action</span><span class="stat-val sage-txt">Audit Review</span></div>
+                  <div class="slide-stat"><span class="stat-lbl">Hallucination</span><span class="stat-val emerald-txt">0.0%</span></div>
+                </div>
+                <button class="btn-slide-action" onclick="selectAndRunCarouselScenario('SCENARIO-04')">
+                  <span>Load Into Reconciler</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="split-grid">
+        
+        <!-- Left: Input Control -->
+        <div class="solid-card glass-card dispatch-panel">
+          <div class="card-heading-row">
+            <div>
+              <div class="card-heading">Transaction Reconciliation Dispatch</div>
+              <div class="card-description">Select a statement profile or paste an incoming un-reconciled bank statement descriptor.</div>
+            </div>
+            <span class="pill-badge emerald-pill">ReAct Mode</span>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="scenario-select">Pre-Configured Transaction Profile</label>
+            <div class="select-wrapper">
+              <select id="scenario-select" class="input-select">
+                <option value="">-- Custom Manual Input --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="query-input">Bank Statement Descriptor & Natural Request</label>
+            <textarea id="query-input" class="input-textarea" placeholder="Paste bank transaction line item... e.g. SQ *BLUE BOTTLE COFFEE SAN FRANCISCO CA $6.75"></textarea>
+          </div>
+
+          <button id="btn-run-agent" class="btn-action emerald-gradient">
+            <span class="btn-icon">⚡</span>
+            <span>Audit & Reconcile Transaction</span>
+          </button>
+
+          <!-- Scenario Dossier Card -->
+          <div id="scenario-dossier" class="scenario-dossier-card" style="display: none;">
+            <div class="dossier-header-row">
+              <div>
+                <span class="dossier-eyebrow">ACTIVE STATEMENT PROFILE</span>
+                <div class="dossier-title" id="dossier-id-title">Scenario Dossier</div>
+              </div>
+              <span id="dossier-realloc-badge" class="tag-badge">No Reallocation</span>
+            </div>
+            <div class="dossier-desc" id="dossier-desc"></div>
+            
+            <div class="audit-metric-grid">
+              <div class="metric-item">
+                <span class="metric-item-label">Merchant</span>
+                <span class="metric-item-value" id="dossier-merchant">--</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-item-label">Amount</span>
+                <span class="metric-item-value" id="dossier-amount">--</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-item-label">Target Month</span>
+                <span class="metric-item-value" id="dossier-month">--</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-item-label">Reallocation Required</span>
+                <span class="metric-item-value" id="dossier-realloc-req">No</span>
+              </div>
+            </div>
+
+            <div class="expected-seq-header">Expected Tool Pipeline Sequence</div>
+            <div id="expected-seq-text" class="code-seq-box"></div>
+          </div>
+        </div>
+
+        <!-- Right: Explainable Audit Trail -->
+        <div class="solid-card glass-card audit-panel">
+          <div class="audit-panel-header">
+            <div>
+              <div class="card-heading">Explainable Audit Trail & Reasoner</div>
+              <div class="card-description">Sequential tool dispatch history, internal rationale chains, and verified ledger balance.</div>
+            </div>
+            <span id="trace-meta-pill" class="status-badge emerald-badge" style="display: none;">0 Steps</span>
+          </div>
+
+          <div id="trace-empty" class="empty-state-box">
+            <div class="empty-state-icon">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <div class="empty-state-title">Ready for Ledger Audit</div>
+            <div class="empty-state-desc">Select an incoming bank transaction or choose a profile from the showcase above, then click <strong>Audit & Reconcile Transaction</strong> to execute the autonomous multi-step reasoning pipeline.</div>
+          </div>
+
+          <!-- Structured Audit Steps -->
+          <div id="trace-timeline" class="audit-timeline" style="display: none;"></div>
+
+          <!-- Prominent Budget Reallocation Card -->
+          <div id="trace-reallocation-card" class="reallocation-summary-card" style="display: none;">
+            <div class="reallocation-header">
+              <div class="realloc-title-group">
+                <div class="realloc-pulse-icon">⇄</div>
+                <div>
+                  <div class="realloc-main-title">Surplus-to-Deficit Fund Rebalancing (Tool 5)</div>
+                  <div class="realloc-subtitle">Priority-weighted surplus reallocation covering deficit envelopes while locking essential bills</div>
+                </div>
+              </div>
+              <span id="realloc-status-badge" class="tag-badge success">Fully Balanced</span>
+            </div>
+
+            <div id="realloc-transfers-container" class="realloc-transfers-box"></div>
+
+            <div class="realloc-stats-row">
+              <div class="realloc-stat">
+                <span class="realloc-stat-label">Total Deficit Covered</span>
+                <span id="realloc-stat-covered" class="realloc-stat-val emerald-txt">$0.00</span>
+              </div>
+              <div class="realloc-stat">
+                <span class="realloc-stat-label">Remaining Uncovered</span>
+                <span id="realloc-stat-uncovered" class="realloc-stat-val">$0.00</span>
+              </div>
+              <div class="realloc-stat">
+                <span class="realloc-stat-label">Floor Protections Enforced</span>
+                <span class="realloc-stat-val locked-note">Housing, Healthcare & Utilities strictly preserved</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Final Recommendation -->
+          <div id="trace-recommendation" class="recommendation-box" style="display: none;">
+            <div class="recommendation-title-row">
+              <span class="rec-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <div class="recommendation-title">Reconciliation Summary & Action Directive</div>
+            </div>
+            <div id="recommendation-text" class="recommendation-text"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: PIPELINE VERIFICATION SUITE -->
+    <section id="tab-eval" class="tab-content" role="tabpanel">
+      <div class="solid-card glass-card action-banner">
+        <div>
+          <div class="card-heading">Multi-Scenario Pipeline Verification Suite (18 Scenarios)</div>
+          <div class="card-description" style="margin-bottom: 0;">Executes 18 comprehensive real-world banking statement scenarios through the multi-turn ReAct reasoning chain, verifying end-to-end tool orchestration and ledger updates.</div>
+        </div>
+        <button id="btn-run-benchmark" class="btn-action emerald-gradient banner-btn">
+          <span class="btn-icon">▶</span>
+          <span>Execute Verification Suite</span>
+        </button>
+      </div>
+
+      <!-- Operational Indicators -->
+      <div class="kpi-row">
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Verification Scope</div>
+          <div class="kpi-value">18</div>
+          <div class="kpi-subtext">Statement Scenarios</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Pipeline Architecture</div>
+          <div class="kpi-value emerald-txt">5-Tool ReAct</div>
+          <div class="kpi-subtext">Dynamic Tool Orchestration</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Ledger Consistency</div>
+          <div id="metric-ledger-status" class="kpi-value emerald-txt">Verified</div>
+          <div class="kpi-subtext">Envelope Integrity Confirmed</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Mean Processing Latency</div>
+          <div id="metric-avg-latency" class="kpi-value">--</div>
+          <div class="kpi-subtext">Sub-5ms Execution Engine</div>
+        </div>
+      </div>
+
+      <!-- Execution Matrix -->
+      <div class="solid-card glass-card">
+        <div class="card-heading-row" style="margin-bottom: 14px;">
+          <div>
+            <div class="card-heading">Scenario Execution & Ledger Resolution Matrix</div>
+            <div class="card-description" style="margin-bottom: 0;">Traces each transaction profile through tool sequencing, ledger checks, and resulting financial action.</div>
+          </div>
+        </div>
+        <div class="data-table-wrapper">
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Scenario ID</th>
+                <th>Scenario Title</th>
+                <th>Statement Input</th>
+                <th>Executed Tool Sequence</th>
+                <th style="width: 90px;">Latency</th>
+                <th>Reconciliation Action</th>
+                <th style="width: 100px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="eval-table-body">
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  Click "Execute Verification Suite" to process the 18 banking transaction profiles.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ERROR PROPAGATION LAB -->
+    <section id="tab-error" class="tab-content" role="tabpanel">
+      <div class="solid-card glass-card action-banner">
+        <div>
+          <div class="card-heading">Failure-Mode & Error Propagation Stress Lab</div>
+          <div class="card-description" style="margin-bottom: 0;">
+            Injects deliberate miscategorizations at Step 1 to measure downstream tool corruption and cumulative Ledger Dollar Drift ($).
+          </div>
+        </div>
+        <button id="btn-run-error-suite" class="btn-action emerald-gradient banner-btn">
+          <span class="btn-icon">⚡</span>
+          <span>Execute Perturbation Test</span>
+        </button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Downstream Step Corruption</div>
+          <div id="kpi-prop-rate" class="kpi-value">--</div>
+          <div class="kpi-subtext">Inherited cascade rate</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Cumulative Dollar Drift</div>
+          <div id="kpi-dollar-drift" class="kpi-value rose-txt">--</div>
+          <div class="kpi-subtext">Total variance distortion</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Recommendation Corruption</div>
+          <div id="kpi-rec-corrupt" class="kpi-value">--</div>
+          <div class="kpi-subtext">Compromised advice</div>
+        </div>
+        <div class="kpi-card glass-card">
+          <div class="kpi-label">Perturbation Runs</div>
+          <div class="kpi-value emerald-txt">11</div>
+          <div class="kpi-subtext">Paired test suites</div>
+        </div>
+      </div>
+
+      <div class="solid-card glass-card">
+        <div class="card-heading" style="margin-bottom: 14px;">Injected Error Cascade Breakdown</div>
+        <div class="data-table-wrapper">
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>Original</th>
+                <th>Injected Category</th>
+                <th>Amount</th>
+                <th>Dollar Drift</th>
+                <th>Downstream Corrupted</th>
+                <th>Final Advice Status</th>
+              </tr>
+            </thead>
+            <tbody id="error-table-body">
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  Click "Execute Perturbation Test" to run failure-mode simulations.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: BANKING LEDGER (SQLITE) -->
+    <section id="tab-ledger" class="tab-content" role="tabpanel">
+      <div class="solid-card glass-card" style="margin-bottom: 20px;">
+        <div class="card-heading">Enterprise Banking Ledger Database (SQLite)</div>
+        <div class="card-description" style="margin-bottom: 0;">
+          Loaded from <code>reconciliation.db</code> (Kaggle personal finance format) featuring real statement descriptors, normalized merchants, and audit flags.
+        </div>
+      </div>
+
+      <div class="solid-card glass-card">
+        <div class="data-table-wrapper">
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Raw Statement Descriptor</th>
+                <th>Normalized Merchant</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body">
+              <!-- Seeded via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: 5-TOOL REGISTRY -->
+    <section id="tab-tools" class="tab-content" role="tabpanel">
+      <div class="solid-card glass-card" style="margin-bottom: 20px;">
+        <div class="card-heading">Fixed 5-Tool Interface Registry (PRD Section 3 Lock)</div>
+        <div class="card-description" style="margin-bottom: 0;">
+          The locked 5-tool contracts with typed parameter schema definitions and functional scopes.
+        </div>
+      </div>
+
+      <div id="tools-grid" class="tools-grid-layout">
+        <!-- Populated via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
