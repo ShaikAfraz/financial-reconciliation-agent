@@ -1,0 +1,202 @@
+[
+  {
+    "id": "HW-01",
+    "bank_descriptor": "AMZN MKTP US*2B710 WA 08/12",
+    "ledger_descriptor": "Amazon Web Services - Cloud Hosting INV-88210"
+  },
+  {
+    "id": "HW-02",
+    "bank_descriptor": "ACH DEP STRIPE PAYOUT 1029482",
+    "ledger_descriptor": "Stripe Merchant Settlement - Online Sales"
+  },
+  {
+    "id": "HW-03",
+    "bank_descriptor": "GOOGLE *WORKSPACE CC@GOOGLE.COM CA",
+    "ledger_descriptor": "Google LLC - Google Workspace Enterprise Subscriptions"
+  },
+  {
+    "id": "HW-04",
+    "bank_descriptor": "PAYROLL SVC ADP *NET-PAY 94821",
+    "ledger_descriptor": "ADP Payroll Services - Biweekly Net Payroll Distribution"
+  },
+  {
+    "id": "HW-05",
+    "bank_descriptor": "OFFICE DEPOT #1082 SAN JOSE CA",
+    "ledger_descriptor": "Office Depot Inc - Administrative Office Supplies PO-4091"
+  },
+  {
+    "id": "HW-06",
+    "bank_descriptor": "SLACK TECHNOLOGIES INC 415-555-0192 CA",
+    "ledger_descriptor": "Slack Technologies LLC - Collaboration SaaS Annual License"
+  },
+  {
+    "id": "HW-07",
+    "bank_descriptor": "GITHUB INC 877-448-4820 CA",
+    "ledger_descriptor": "GitHub Enterprise Team Plan Monthly Invoice"
+  },
+  {
+    "id": "HW-08",
+    "bank_descriptor": "FEDEX 78192837194 MEMPHIS TN",
+    "ledger_descriptor": "Federal Express Corp - Client Document Courier Overnight"
+  },
+  {
+    "id": "HW-09",
+    "bank_descriptor": "UBER *TRIP PENDING HELP.UBER.COM",
+    "ledger_descriptor": "Uber Technologies - Executive Travel to Client Site"
+  },
+  {
+    "id": "HW-10",
+    "bank_descriptor": "MICROSOFT *MSFT AZURE 800-642-7676",
+    "ledger_descriptor": "Microsoft Corporation - Azure Cloud Compute Infrastructure"
+  },
+  {
+    "id": "HW-11",
+    "bank_descriptor": "DELTA AIR 0062849182049 ATLANTA GA",
+    "ledger_descriptor": "Delta Air Lines - Sales Q3 Conference Travel Ticket"
+  },
+  {
+    "id": "HW-12",
+    "bank_descriptor": "MARRIOTT DOWNTOWN HOTEL SAN FRAN CA",
+    "ledger_descriptor": "Marriott International - Hotel Lodging Sales Summit"
+  },
+  {
+    "id": "HW-13",
+    "bank_descriptor": "ZOOM.US 888-799-9666 SAN JOSE CA",
+    "ledger_descriptor": "Zoom Video Communications - Enterprise Pro Meetings"
+  },
+  {
+    "id": "HW-14",
+    "bank_descriptor": "SALESFORCE.COM INC 415-901-7000 CA",
+    "ledger_descriptor": "Salesforce.com Inc - CRM Cloud Enterprise Seats"
+  },
+  {
+    "id": "HW-15",
+    "bank_descriptor": "WEWORK *MANAGEMENT LLC 212-555-0199 NY",
+    "ledger_descriptor": "WeWork Companies LLC - Flexible Office Space Lease August"
+  },
+  {
+    "id": "HW-16",
+    "bank_descriptor": "COMCAST BUSINESS 800-391-3000 PA",
+    "ledger_descriptor": "Comcast Business - High-Speed Fiber Internet Headquarters"
+  },
+  {
+    "id": "HW-17",
+    "bank_descriptor": "DATADOG *MONITORING NEW YORK NY",
+    "ledger_descriptor": "Datadog Inc - Infrastructure Observability & APM Platform"
+  },
+  {
+    "id": "HW-18",
+    "bank_descriptor": "NOTION LABS INC SAN FRANCISCO CA",
+    "ledger_descriptor": "Notion Labs Inc - Workspace Knowledge Base Subscription"
+  },
+  {
+    "id": "HW-19",
+    "bank_descriptor": "AIRBNB *HM92841920 SAN FRANCISCO CA",
+    "ledger_descriptor": "Airbnb Inc - Temporary Relocation Corporate Housing"
+  },
+  {
+    "id": "HW-20",
+    "bank_descriptor": "USPS PO 364918274 SAN JOSE CA",
+    "ledger_descriptor": "United States Postal Service - Certified Mailings"
+  },
+  {
+    "id": "HW-21",
+    "bank_descriptor": "AT&T *BILL PAYMENT 800-331-0500 TX",
+    "ledger_descriptor": "AT&T Mobility - Corporate Employee Cell Phone Plans"
+  },
+  {
+    "id": "HW-22",
+    "bank_descriptor": "DOCUSIGN INC 877-720-2040 CA",
+    "ledger_descriptor": "DocuSign Inc - Electronic Signature Legal Enterprise Plan"
+  },
+  {
+    "id": "HW-23",
+    "bank_descriptor": "FIGMA INC 415-555-0144 CA",
+    "ledger_descriptor": "Figma Inc - Product UI/UX Design Team Licenses"
+  },
+  {
+    "id": "HW-24",
+    "bank_descriptor": "SNOWFLAKE COMPUTING SAN MATEO CA",
+    "ledger_descriptor": "Snowflake Inc - Data Cloud Warehouse Compute Usage"
+  },
+  {
+    "id": "HW-25",
+    "bank_descriptor": "APPLE STORE #R102 CUPERTINO CA",
+    "ledger_descriptor": "Apple Inc - Developer Hardware MacBook Pro 16in"
+  },
+  {
+    "id": "HW-26",
+    "bank_descriptor": "INTUIT *QUICKBOOKS PAYROLL 800-446-8848",
+    "ledger_descriptor": "Intuit Inc - Payroll Tax Filing Software Fee"
+  },
+  {
+    "id": "HW-27",
+    "bank_descriptor": "HEROKU *CLOUD HOSTING 866-278-1349 CA",
+    "ledger_descriptor": "Heroku (Salesforce) - Staging Container Dynos"
+  },
+  {
+    "id": "HW-28",
+    "bank_descriptor": "VERIZON WIRELESS 800-922-0204 FL",
+    "ledger_descriptor": "Verizon Wireless - Backup Cellular Gateway Routers"
+  },
+  {
+    "id": "HW-29",
+    "bank_descriptor": "LINKEDIN *TALENT SOL 650-687-3600 CA",
+    "ledger_descriptor": "LinkedIn Corporation - Recruiter Corporate Hiring Suite"
+  },
+  {
+    "id": "HW-30",
+    "bank_descriptor": "GODADDY *DOMAIN RENEWAL 480-505-8877 AZ",
+    "ledger_descriptor": "GoDaddy.com LLC - Corporate Domain Portfolio Renewals"
+  },
+  {
+    "id": "HW-31",
+    "bank_descriptor": "DELL MARKETING L.P. 800-456-3355 TX",
+    "ledger_descriptor": "Dell Technologies - Server Rack Replacement Components"
+  },
+  {
+    "id": "HW-32",
+    "bank_descriptor": "PG&E WEB PMT 91820491829 SAN FRAN CA",
+    "ledger_descriptor": "Pacific Gas and Electric - Headquarters Utility Bill"
+  },
+  {
+    "id": "HW-33",
+    "bank_descriptor": "HUBSPOT INC 888-482-7768 MA",
+    "ledger_descriptor": "HubSpot Inc - Inbound Marketing & Lead Automation Suite"
+  },
+  {
+    "id": "HW-34",
+    "bank_descriptor": "CONCUR TECH INC 888-883-8411 WA",
+    "ledger_descriptor": "SAP Concur - Employee Expense Management System"
+  },
+  {
+    "id": "HW-35",
+    "bank_descriptor": "TWILIO *COMMUNICATIONS 877-889-4546 CA",
+    "ledger_descriptor": "Twilio Inc - Customer SMS Verification OTP API Usage"
+  },
+  {
+    "id": "HW-36",
+    "bank_descriptor": "WALMART SUPERCENTER #2841 BENTONVILLE AR",
+    "ledger_descriptor": "Walmart Inc - Office Breakroom Supplies & Kitchen Staples"
+  },
+  {
+    "id": "HW-37",
+    "bank_descriptor": "HOME DEPOT #0628 ATLANTA GA",
+    "ledger_descriptor": "The Home Depot - Facility Maintenance Tools & Hardware"
+  },
+  {
+    "id": "HW-38",
+    "bank_descriptor": "EXPEDIA *HOTEL 800-397-3342 WA",
+    "ledger_descriptor": "Expedia Group - Engineering Offsite Hotel Bookings"
+  },
+  {
+    "id": "HW-39",
+    "bank_descriptor": "ZENDESK INC 888-670-4882 CA",
+    "ledger_descriptor": "Zendesk Inc - Customer Support Ticket Helpdesk SaaS"
+  },
+  {
+    "id": "HW-40",
+    "bank_descriptor": "CHASE WIRE FEE OUTGOING 102948",
+    "ledger_descriptor": "JPMorgan Chase Bank - Domestic Wire Transfer Processing Fee"
+  }
+]

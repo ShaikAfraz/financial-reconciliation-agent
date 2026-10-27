@@ -54,11 +54,80 @@ def init_database():
         tool_name TEXT NOT NULL,
         arguments_json TEXT,
         output_json TEXT,
-        duration_ms REAL
+        duration_ms REAL,
+        provider TEXT,
+        model TEXT,
+        tokens INTEGER DEFAULT 0
+    );
+
+    -- Two-sided Bank-vs-Ledger Reconciliation Schema (Integer Cents only)
+    CREATE TABLE IF NOT EXISTS bank_records (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        reference TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS ledger_records (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        reference TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS matches (
+        match_id TEXT PRIMARY KEY,
+        status TEXT NOT NULL,
+        method TEXT NOT NULL,
+        confidence REAL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS match_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id TEXT NOT NULL,
+        side TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        UNIQUE (match_id, side, record_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS exceptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        record_id TEXT NOT NULL,
+        side TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        match_id TEXT NOT NULL,
+        decision TEXT NOT NULL,
+        reviewer_note TEXT,
+        ts TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE INDEX IF NOT EXISTS idx_txns_date_cat ON transactions(date, category);
+    CREATE INDEX IF NOT EXISTS idx_bank_records_date ON bank_records(date);
+    CREATE INDEX IF NOT EXISTS idx_ledger_records_date ON ledger_records(date);
+    CREATE INDEX IF NOT EXISTS idx_bank_records_amt ON bank_records(amount_cents);
+    CREATE INDEX IF NOT EXISTS idx_ledger_records_amt ON ledger_records(amount_cents);
+    CREATE INDEX IF NOT EXISTS idx_match_members_match ON match_members(match_id);
+    CREATE INDEX IF NOT EXISTS idx_exceptions_record ON exceptions(record_id, side);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_run ON audit_logs(run_id);
     """)
+
+    # Check and migrate audit_logs columns if needed
+    cursor.execute("PRAGMA table_info(audit_logs)")
+    existing_audit_cols = {row["name"] for row in cursor.fetchall()}
+    if "provider" not in existing_audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN provider TEXT")
+    if "model" not in existing_audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN model TEXT")
+    if "tokens" not in existing_audit_cols:
+        cursor.execute("ALTER TABLE audit_logs ADD COLUMN tokens INTEGER DEFAULT 0")
 
     # Seed budget rules
     budget_rules_data = [
@@ -248,6 +317,169 @@ def seed_transactions_from_dataset():
     conn.close()
     print(f"Database successfully initialized with {len(txn_list)} transactions at {DB_PATH}")
     print(f"Exported CSV dataset at {CSV_PATH}")
+
+# ----------------------------------------------------------------------
+# Helper APIs for Two-Sided Bank vs Ledger Reconciliation
+# ----------------------------------------------------------------------
+
+def insert_bank_record(rec_id: str, date: str, amount_cents: int, description: str, reference: Optional[str] = None):
+    """Inserts a bank record with integer cents amount."""
+    if not isinstance(amount_cents, int) or isinstance(amount_cents, bool):
+        raise TypeError(f"amount_cents must be an integer, got {type(amount_cents).__name__}")
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO bank_records (id, date, amount_cents, description, reference)
+    VALUES (?, ?, ?, ?, ?)
+    """, (rec_id, date, amount_cents, description, reference))
+    conn.commit()
+    conn.close()
+
+def insert_ledger_record(rec_id: str, date: str, amount_cents: int, description: str, reference: Optional[str] = None):
+    """Inserts an ERP/accounting ledger record with integer cents amount."""
+    if not isinstance(amount_cents, int) or isinstance(amount_cents, bool):
+        raise TypeError(f"amount_cents must be an integer, got {type(amount_cents).__name__}")
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO ledger_records (id, date, amount_cents, description, reference)
+    VALUES (?, ?, ?, ?, ?)
+    """, (rec_id, date, amount_cents, description, reference))
+    conn.commit()
+    conn.close()
+
+def insert_match(
+    match_id: str,
+    status: str,
+    method: str,
+    confidence: float = 1.0,
+    conn: Optional[sqlite3.Connection] = None
+) -> str:
+    """Records a match between bank and ledger records."""
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO matches (match_id, status, method, confidence)
+    VALUES (?, ?, ?, ?)
+    """, (match_id, status, method, confidence))
+    if should_close:
+        conn.commit()
+        conn.close()
+    return match_id
+
+def add_match_member(
+    match_id: str,
+    side: str,
+    record_id: str,
+    conn: Optional[sqlite3.Connection] = None
+):
+    """Associates a bank or ledger record with a match."""
+    if side not in ("bank", "ledger"):
+        raise ValueError(f"side must be 'bank' or 'ledger', got {side!r}")
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO match_members (match_id, side, record_id)
+    VALUES (?, ?, ?)
+    """, (match_id, side, record_id))
+    if should_close:
+        conn.commit()
+        conn.close()
+
+def insert_exception(
+    record_id: str,
+    side: str,
+    exc_type: str,
+    status: str = "open",
+    conn: Optional[sqlite3.Connection] = None
+):
+    """Records a reconciliation exception."""
+    if side not in ("bank", "ledger"):
+        raise ValueError(f"side must be 'bank' or 'ledger', got {side!r}")
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO exceptions (record_id, side, type, status)
+    VALUES (?, ?, ?, ?)
+    """, (record_id, side, exc_type, status))
+    if should_close:
+        conn.commit()
+        conn.close()
+
+def reset_reconciliation_tables(conn: Optional[sqlite3.Connection] = None):
+    """
+    Clears runtime reconciliation state tables between benchmark runs.
+    Preserves audit_logs and budget rules.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM bank_records")
+    cursor.execute("DELETE FROM ledger_records")
+    cursor.execute("DELETE FROM matches")
+    cursor.execute("DELETE FROM match_members")
+    cursor.execute("DELETE FROM exceptions")
+    cursor.execute("DELETE FROM reviews")
+    if should_close:
+        conn.commit()
+        conn.close()
+
+def insert_review(match_id: str, decision: str, reviewer_note: Optional[str] = None):
+    """Records a human auditor review decision."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO reviews (match_id, decision, reviewer_note)
+    VALUES (?, ?, ?)
+    """, (match_id, decision, reviewer_note))
+    conn.commit()
+    conn.close()
+
+def insert_audit_log(
+    run_id: str,
+    step_index: int,
+    tool_name: str,
+    arguments_json: str,
+    output_json: str,
+    duration_ms: float,
+    provider: str = "deterministic",
+    model: str = "none",
+    tokens: int = 0,
+    conn: Optional[sqlite3.Connection] = None
+):
+    """
+    Writes an audit log entry for a step.
+    Can execute within an existing database transaction (via `conn`) for atomicity.
+    """
+    should_close = False
+    if conn is None:
+        conn = get_connection()
+        should_close = True
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO audit_logs (
+        run_id, step_index, tool_name, arguments_json, output_json,
+        duration_ms, provider, model, tokens
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        run_id, step_index, tool_name, arguments_json, output_json,
+        round(duration_ms, 2), provider, model, tokens
+    ))
+    if should_close:
+        conn.commit()
+        conn.close()
 
 if __name__ == "__main__":
     seed_transactions_from_dataset()

@@ -1,0 +1,23 @@
+# Environment and credentials
+.env*
+*secret*
+*api_key*
+
+# Databases and SQLite state
+*.db
+*.db-wal
+*.db-shm
+*.db.backup*
+
+# Data cache & temporary files
+data/cache/
+uploads/
+logs/
+backups/
+
+# Python bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
