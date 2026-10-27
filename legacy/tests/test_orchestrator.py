@@ -1,15 +1,22 @@
 """
-Unit tests for the FinancialReconciliationAgent orchestrator and trace logging.
+Unit tests for the FinancialReconciliationAgent orchestrator and trace logging in legacy budgeting mode.
 """
 
 import unittest
+from unittest.mock import patch
 from agent.orchestrator import FinancialReconciliationAgent
 from agent.providers.deterministic_provider import DeterministicAgentProvider
+from legacy.tools.registry import execute_legacy_tool
 
 class TestOrchestrator(unittest.TestCase):
 
     def setUp(self):
+        self.patcher = patch("agent.orchestrator.execute_tool", side_effect=execute_legacy_tool)
+        self.patcher.start()
         self.agent = FinancialReconciliationAgent(provider=DeterministicAgentProvider())
+
+    def tearDown(self):
+        self.patcher.stop()
 
     def test_single_transaction_flow(self):
         prompt = "Reconcile my $6.75 coffee at Blue Bottle Coffee and check my dining budget."

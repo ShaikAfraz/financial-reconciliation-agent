@@ -1,16 +1,30 @@
 """
-Unit tests for the 5 financial reconciliation tools.
-Verifies FR-2: Each tool must be independently testable before agent integration.
+Unit tests for the financial reconciliation tools.
+Verifies active tools and legacy tools in their respective modules.
 """
 
 import unittest
-from tools.categorize_transaction import categorize_transaction
-from tools.check_against_budget_rule import check_against_budget_rule
 from tools.flag_anomaly import flag_anomaly
-from tools.calculate_category_variance import calculate_category_variance
-from tools.propose_reallocation import propose_reallocation
+from tools.registry import get_tool_definitions, execute_tool
+from legacy.tools.categorize_transaction import categorize_transaction
+from legacy.tools.check_against_budget_rule import check_against_budget_rule
+from legacy.tools.calculate_category_variance import calculate_category_variance
+from legacy.tools.propose_reallocation import propose_reallocation
 
 class TestTools(unittest.TestCase):
+
+    def test_active_tool_registry_unregisters_budget_tools(self):
+        active_tools = [t["name"] for t in get_tool_definitions()]
+        self.assertNotIn("categorize_transaction", active_tools)
+        self.assertNotIn("check_against_budget_rule", active_tools)
+        self.assertNotIn("calculate_category_variance", active_tools)
+        self.assertNotIn("propose_reallocation", active_tools)
+        self.assertIn("flag_anomaly", active_tools)
+
+        # Executing unregistered tool returns not found
+        res = execute_tool("categorize_transaction", {})
+        self.assertFalse(res["is_success"])
+        self.assertIn("not found", res["error"])
 
     def test_tool1_categorize_transaction(self):
         # Known merchant match

@@ -1,16 +1,23 @@
 """
-Unit tests for the BenchmarkEvaluator and ErrorPropagationAnalyzer.
+Unit tests for the BenchmarkEvaluator and ErrorPropagationAnalyzer on legacy scenarios.
 """
 
 import unittest
+from unittest.mock import patch
 from evaluation.evaluator import BenchmarkEvaluator
 from evaluation.error_propagation import ErrorPropagationAnalyzer
+from legacy.tools.registry import execute_legacy_tool
 
 class TestEvaluation(unittest.TestCase):
 
     def setUp(self):
+        self.patcher = patch("agent.orchestrator.execute_tool", side_effect=execute_legacy_tool)
+        self.patcher.start()
         self.evaluator = BenchmarkEvaluator()
         self.error_analyzer = ErrorPropagationAnalyzer()
+
+    def tearDown(self):
+        self.patcher.stop()
 
     def test_benchmark_metrics_calculation(self):
         results = self.evaluator.run_all()
