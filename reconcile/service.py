@@ -510,7 +510,7 @@ def get_review_queue() -> List[Dict[str, Any]]:
             "match_id": None,
             "status": ex["status"],
             "flag_reason": f"Escalated Exception: {ex['type'].replace('_', ' ').title()}",
-            "confidence": 0.72,
+            "confidence": None,
             "target_item": target,
             "proposed_candidate": best_cand,
             "candidates": candidate_list,

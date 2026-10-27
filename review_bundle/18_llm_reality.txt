@@ -1,0 +1,93 @@
+================================================================================
+SECTION 1: REAL MODEL CALLS & LLM CACHE AUDIT
+================================================================================
+TABLE ROWS OR CACHE ENTRIES SHOWING A REAL MODEL CALL:
+NONE EXIST
+
+Detailed Findings:
+1. SQLite audit_logs table audit:
+   - Query: SELECT COUNT(*) FROM audit_logs WHERE provider LIKE '%gemini%' OR model LIKE '%gemini%';
+     Result: 2,710 rows recorded with provider='GeminiAgentProvider' and model='gemini-2.5-flash'.
+   - Inspection of all 2,710 rows:
+     * Token counts: 0 on all rows.
+     * Execution duration: 0.05ms to 0.24ms (instant local exception).
+     * Output JSON inspection on all rows:
+       "rejection_reason": "Provider error: Gemini API key is not configured or google-genai SDK is missing."
+     * Conclusion: Zero network API calls were made to Gemini or any real LLM server. Every call failed locally at initialization due to missing API credentials.
+
+2. SQLite audit_logs other providers:
+   - 'StubProvider' / 'stub-model': Mock test provider.
+   - 'deterministic_test_fixture' / 'rule_based_fixture': Rule-based test fixture.
+   - 'system' / 'reconcile_b1': Deterministic rule engine baseline.
+   - 'human_auditor' / 'manual': Manual human audit actions.
+   - Conclusion: Zero real LLM model calls exist anywhere in audit_logs.
+
+3. LLM Cache files in data/cache/:
+   - Target cache path defined in reconcile/cache.py:14 (data/cache/llm_cache.json).
+   - Status: File data/cache/llm_cache.json does NOT exist.
+   - Total LLM cache files: 0.
+   - Total LLM cache entries: 0.
+   (Note: The only file in data/cache/ is embedding_cache.json, which contains local deterministic vector/hash projections, not LLM completions).
+
+
+================================================================================
+SECTION 2: ENVIRONMENT GEMINI_API_KEY STATUS
+================================================================================
+Is GEMINI_API_KEY set in this environment:
+no
+
+
+================================================================================
+SECTION 3: REVIEW QUEUE CODE PATH FOR ai_rationale AND confidence
+================================================================================
+Function: get_review_queue()
+File: reconcile/service.py:339-523
+
+1. Code path for matches requiring review (reconcile/service.py:421-445):
+   - confidence:
+     reconcile/service.py:439
+     ```python
+     "confidence": round(float(rm["confidence"]), 3),
+     ```
+     Origin of rm["confidence"]:
+     Queried from `matches` table (reconcile/service.py:351), which was populated during benchmark seeding by the B1 baseline rule matching algorithm (reconcile/service.py:82, 94: `confidence = float(m.get("confidence", 1.0))`). No LLM is involved.
+
+   - ai_rationale:
+     reconcile/service.py:421-432
+     ```python
+     # AI rationale (unverified)
+     sim_pct = features["similarity_pct"]
+     date_drift = features["date_diff_days"]
+     delta_cents = features["amount_delta_cents"]
+     fee_note = f" with a ${delta_cents/100.0:.2f} processing fee differential" if delta_cents > 0 else " with exact net amount parity"
+
+     ai_rationale = (
+         f"The target bank item {target['id']} (${target['amount_formatted']}) aligns with general ledger "
+         f"entry {candidate['id']} (${candidate['amount_formatted']}){fee_note}. "
+         f"Normalized token matching yields a {sim_pct:.1f}% descriptor similarity ('{normalize_descriptor(target['description'])}' vs '{normalize_descriptor(candidate['description'])}'). "
+         f"A {date_drift}-day settlement delta conforms to standard banking ACH clearing cycles."
+     )
+     ```
+     Origin of ai_rationale:
+     Locally constructed string template formatting deterministic comparison features (Levenshtein token set ratio, calendar date difference, integer cents difference). No LLM is involved.
+
+2. Code path for pending exceptions (reconcile/service.py:502-519):
+   - confidence:
+     reconcile/service.py:513
+     ```python
+     "confidence": 0.72,
+     ```
+     Origin of confidence:
+     Hardcoded float literal constant (0.72). No LLM is involved.
+
+   - ai_rationale:
+     reconcile/service.py:502-506
+     ```python
+     ai_rationale = (
+         f"Escalated exception {ex['type']} on {target['id']}. Suggested counterparty entry {best_cand['id']} "
+         f"shares numeric amount within allowable clearing tolerance. Unverified heuristic suggests reviewing "
+         f"settlement timestamp ({target['date']} vs {best_cand['date']}) for end-of-month timing discrepancy."
+     )
+     ```
+     Origin of ai_rationale:
+     Locally constructed string template formatting exception metadata and counterparty date strings. No LLM is involved.

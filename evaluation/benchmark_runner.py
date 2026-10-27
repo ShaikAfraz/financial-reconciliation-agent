@@ -66,6 +66,197 @@ def verify_dataset_integrity(split_file: Path, sha256_file: Path) -> str:
     return actual_sha
 
 
+def verify_provider_readiness() -> Tuple[bool, str]:
+    """
+    Verifies that a working Gemini provider is configured:
+    1. GEMINI_API_KEY is set and non-empty.
+    2. google-genai SDK is available and importable.
+    3. A preflight API call succeeds.
+    Returns (True, "Ready") or (False, error_reason).
+    """
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        return False, "GEMINI_API_KEY environment variable is not configured or empty."
+
+    try:
+        from google import genai
+    except ImportError:
+        return False, "google-genai SDK is not installed or import failed."
+
+    try:
+        client = genai.Client(api_key=key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents="ping",
+        )
+        if response and response.text:
+            return True, "Provider verified and preflight call succeeded."
+        return False, "Preflight call returned an empty response."
+    except Exception as e:
+        return False, f"Provider preflight call failed: {type(e).__name__}: {str(e)}"
+
+
+def evaluate_corruption_detection(
+    bank_records: List[Dict[str, Any]],
+    ledger_records: List[Dict[str, Any]],
+    matches: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """
+    Tests the balance consistency check against five seeded corruptions on a reconciled dataset:
+    1. Delete one matched record on one side.
+    2. Delete one unmatched record.
+    3. Change one amount by one cent on one side.
+    4. Swap the amounts of two matched members.
+    5. Add a spurious record.
+    Returns structured results indicating which corruptions are flagged vs not flagged.
+    """
+    import copy
+
+    clean_proof = compute_balance_proof(bank_records, ledger_records, matches)
+    clean_balanced = clean_proof["is_balanced"] and clean_proof["difference_cents"] == 0
+
+    results = []
+
+    matched_bank_ids = set()
+    matched_ledger_ids = set()
+    for m in matches:
+        matched_bank_ids.update(m.get("bank_record_ids", []))
+        matched_ledger_ids.update(m.get("ledger_record_ids", []))
+
+    # C1: Delete one matched record on one side
+    c1_bank = copy.deepcopy(bank_records)
+    c1_ledger = copy.deepcopy(ledger_records)
+    target_matched_bid = next((b["id"] for b in c1_bank if b["id"] in matched_bank_ids), None)
+    if target_matched_bid:
+        c1_bank = [b for b in c1_bank if b["id"] != target_matched_bid]
+        proof_c1 = compute_balance_proof(c1_bank, c1_ledger, matches)
+        flagged_c1 = not proof_c1["is_balanced"] or proof_c1["difference_cents"] != 0
+        diff_c1 = proof_c1["difference_cents"]
+    else:
+        flagged_c1 = False
+        diff_c1 = 0
+
+    results.append({
+        "id": "C1",
+        "description": "Delete one matched record on one side",
+        "seeded_action": f"Deleted matched bank record {target_matched_bid}",
+        "flagged": flagged_c1,
+        "difference_cents": diff_c1,
+        "status": "DETECTED" if flagged_c1 else "NOT DETECTED",
+        "reason": "Creates one-sided disparity between matched groups." if flagged_c1 else "Failed to detect."
+    })
+
+    # C2: Delete one unmatched record
+    c2_bank = copy.deepcopy(bank_records)
+    c2_ledger = copy.deepcopy(ledger_records)
+    target_unmatched_bid = next((b["id"] for b in c2_bank if b["id"] not in matched_bank_ids), None)
+    if target_unmatched_bid:
+        c2_bank = [b for b in c2_bank if b["id"] != target_unmatched_bid]
+        proof_c2 = compute_balance_proof(c2_bank, c2_ledger, matches)
+        flagged_c2 = not proof_c2["is_balanced"] or proof_c2["difference_cents"] != 0
+        diff_c2 = proof_c2["difference_cents"]
+    else:
+        flagged_c2 = False
+        diff_c2 = 0
+
+    results.append({
+        "id": "C2",
+        "description": "Delete one unmatched record",
+        "seeded_action": f"Deleted unmatched bank record {target_unmatched_bid}",
+        "flagged": flagged_c2,
+        "difference_cents": diff_c2,
+        "status": "DETECTED" if flagged_c2 else "NOT DETECTED",
+        "reason": "Unmatched items cancel out: (Ending Bank - Unmatched Bank = Matched Bank)."
+    })
+
+    # C3: Change one amount by one cent on one side
+    c3_bank = copy.deepcopy(bank_records)
+    c3_ledger = copy.deepcopy(ledger_records)
+    target_c3_rec = next((b for b in c3_bank if b["id"] in matched_bank_ids), None)
+    if target_c3_rec:
+        target_c3_rec["amount_cents"] += 1
+        target_c3_rec["amount"] = target_c3_rec["amount_cents"] / 100.0
+        proof_c3 = compute_balance_proof(c3_bank, c3_ledger, matches)
+        flagged_c3 = not proof_c3["is_balanced"] or proof_c3["difference_cents"] != 0
+        diff_c3 = proof_c3["difference_cents"]
+    else:
+        flagged_c3 = False
+        diff_c3 = 0
+
+    results.append({
+        "id": "C3",
+        "description": "Change one amount by one cent on one side",
+        "seeded_action": f"Added +1 cent to matched bank record {target_c3_rec['id'] if target_c3_rec else ''}",
+        "flagged": flagged_c3,
+        "difference_cents": diff_c3,
+        "status": "DETECTED" if flagged_c3 else "NOT DETECTED",
+        "reason": "Induces 1-cent variance in adjusted totals ($0.01 difference)." if flagged_c3 else "Failed to detect."
+    })
+
+    # C4: Swap the amounts of two matched members
+    c4_bank = copy.deepcopy(bank_records)
+    c4_ledger = copy.deepcopy(ledger_records)
+    matched_bank_recs = [b for b in c4_bank if b["id"] in matched_bank_ids]
+    if len(matched_bank_recs) >= 2 and matched_bank_recs[0]["amount_cents"] != matched_bank_recs[1]["amount_cents"]:
+        amt0 = matched_bank_recs[0]["amount_cents"]
+        amt1 = matched_bank_recs[1]["amount_cents"]
+        matched_bank_recs[0]["amount_cents"] = amt1
+        matched_bank_recs[0]["amount"] = amt1 / 100.0
+        matched_bank_recs[1]["amount_cents"] = amt0
+        matched_bank_recs[1]["amount"] = amt0 / 100.0
+        proof_c4 = compute_balance_proof(c4_bank, c4_ledger, matches)
+        flagged_c4 = not proof_c4["is_balanced"] or proof_c4["difference_cents"] != 0
+        diff_c4 = proof_c4["difference_cents"]
+        swap_desc = f"Swapped amounts of {matched_bank_recs[0]['id']} (${amt0/100:.2f}) and {matched_bank_recs[1]['id']} (${amt1/100:.2f})"
+    else:
+        flagged_c4 = False
+        diff_c4 = 0
+        swap_desc = "Could not find two distinct matched records"
+
+    results.append({
+        "id": "C4",
+        "description": "Swap the amounts of two matched members",
+        "seeded_action": swap_desc,
+        "flagged": flagged_c4,
+        "difference_cents": diff_c4,
+        "status": "DETECTED" if flagged_c4 else "NOT DETECTED",
+        "reason": "Aggregate matched group totals are invariant to member permutations."
+    })
+
+    # C5: Add a spurious record
+    c5_bank = copy.deepcopy(bank_records)
+    c5_ledger = copy.deepcopy(ledger_records)
+    spurious_rec = {
+        "id": "SPURIOUS-BNK-9999",
+        "date": "2026-03-31",
+        "amount": 500.00,
+        "amount_cents": 50000,
+        "description": "SPURIOUS UNMATCHED DEPOSIT",
+        "reference": "SPUR-999",
+        "type": "credit",
+        "category": "deposit"
+    }
+    c5_bank.append(spurious_rec)
+    proof_c5 = compute_balance_proof(c5_bank, c5_ledger, matches)
+    flagged_c5 = not proof_c5["is_balanced"] or proof_c5["difference_cents"] != 0
+    diff_c5 = proof_c5["difference_cents"]
+
+    results.append({
+        "id": "C5",
+        "description": "Add a spurious record",
+        "seeded_action": "Injected spurious $500.00 bank record SPURIOUS-BNK-9999",
+        "flagged": flagged_c5,
+        "difference_cents": diff_c5,
+        "status": "DETECTED" if flagged_c5 else "NOT DETECTED",
+        "reason": "Unmatched items cancel out against ending bank balance."
+    })
+
+    return {
+        "clean_baseline_balanced": clean_balanced,
+        "results": results
+    }
+
+
 class BenchmarkRunner:
     """
     Orchestrates multi-system, multi-repeat benchmark evaluations.
@@ -88,6 +279,7 @@ class BenchmarkRunner:
         self.reports_dir = reports_dir or (self.project_root / "reports")
         self.seed = seed
         self.rng = random.Random(seed)
+        self.bench_db_path = Path(os.environ.get("BENCH_DB_PATH", str(self.project_root / "data" / "benchmark.db")))
 
     def load_and_verify_split(self) -> Dict[str, Any]:
         """Loads dataset split and enforces integrity checksum on test split."""
@@ -117,7 +309,8 @@ class BenchmarkRunner:
         ground_truth = split_data["ground_truth"]
 
         # Isolate database state for this run
-        db.reset_reconciliation_tables()
+        db.set_active_db(self.bench_db_path)
+        db.reset_reconciliation_tables(self.bench_db_path)
 
         t0 = time.perf_counter()
         step_latencies: List[float] = []
@@ -130,6 +323,7 @@ class BenchmarkRunner:
         grounded_count = 0
         grounded_total = 0
         injection_compliance_count = 0
+        provider_errors_count = 0
 
         if system == "B0":
             # Exact Matcher
@@ -174,11 +368,20 @@ class BenchmarkRunner:
             rejected = 0
 
         elif system in ("B3", "B4", "AGENT"):
+            is_ready, err_msg = verify_provider_readiness()
+            if not is_ready:
+                sys.stderr.write(
+                    f"\n[FATAL ERROR] B3/B4 Hard Fail: System {system} requires a configured and working provider. "
+                    f"Exiting non-zero.\nReason: {err_msg}\n"
+                )
+                sys.exit(1)
+
             # GenAI Autonomous Agent (B3: single_shot, B4: tool_loop)
             mode = "tool_loop" if system == "B4" else "single_shot"
             run_id = f"{system}-R{repeat_idx}-{uuid.uuid4().hex[:6].upper()}"
             agent = FinancialReconciliationAgent(adjudication_mode=mode)
             agent_out = agent.reconcile_dataset(bank_records, ledger_records, run_id=run_id)
+            provider_errors_count = agent_out.get("provider_errors", 0)
 
             duration_ms = (time.perf_counter() - t0) * 1000.0
             matches = agent_out["matches"]
@@ -311,6 +514,8 @@ class BenchmarkRunner:
                 "injection_compliance_count": injection_compliance_count
             },
             "tokens_and_cost": token_cost,
+            "provider_errors_count": provider_errors_count,
+            "is_valid": (provider_errors_count == 0),
             "adjudications": adjudication_records,
             "matches": matches
         }
@@ -321,6 +526,17 @@ class BenchmarkRunner:
         Computes run-to-run consistency, exports human evaluation sheet,
         and saves Markdown and JSON reports.
         """
+        # Enforce B3/B4 Hard Fail before starting benchmark
+        needs_provider = any(s in ("B3", "B4", "AGENT") for s in self.systems)
+        if needs_provider:
+            is_ready, err_msg = verify_provider_readiness()
+            if not is_ready:
+                sys.stderr.write(
+                    f"\n[FATAL ERROR] B3/B4 Hard Fail: Cannot start benchmark for system requiring provider. "
+                    f"Exiting non-zero.\nReason: {err_msg}\n"
+                )
+                sys.exit(1)
+
         split_data = self.load_and_verify_split()
         system_runs: Dict[str, List[Dict[str, Any]]] = {}
         all_adjudications_for_human_eval: List[Dict[str, Any]] = []
@@ -330,19 +546,25 @@ class BenchmarkRunner:
         print(f"Records: {len(split_data['bank_records'])} Bank | {len(split_data['ledger_records'])} Ledger | {len(split_data['ground_truth'])} Ground Truth")
         print(f"============================================================================")
 
-        for sys_id in self.systems:
-            system_runs[sys_id] = []
-            for r in range(1, self.repeats + 1):
-                sys.stdout.write(f"Executing {sys_id} (run {r}/{self.repeats})... ")
-                sys.stdout.flush()
-                res = self.run_single_iteration(sys_id, split_data, r)
-                system_runs[sys_id].append(res)
-                f1_pct = res["metrics"]["summary"]["f1"] * 100.0
-                cov_pct = res["metrics"]["summary"]["coverage"] * 100.0
-                print(f"F1: {f1_pct:.1f}% | Cov: {cov_pct:.1f}% | Latency p50: {res['latencies']['p50_ms']}ms")
+        # Direct database access and audit logging to isolated benchmark DB
+        db.set_active_db(self.bench_db_path)
+        db.init_database(self.bench_db_path)
+        try:
+            for sys_id in self.systems:
+                system_runs[sys_id] = []
+                for r in range(1, self.repeats + 1):
+                    sys.stdout.write(f"Executing {sys_id} (run {r}/{self.repeats})... ")
+                    sys.stdout.flush()
+                    res = self.run_single_iteration(sys_id, split_data, r)
+                    system_runs[sys_id].append(res)
+                    f1_pct = res["metrics"]["summary"]["f1"] * 100.0
+                    cov_pct = res["metrics"]["summary"]["coverage"] * 100.0
+                    print(f"F1: {f1_pct:.1f}% | Cov: {cov_pct:.1f}% | Latency p50: {res['latencies']['p50_ms']}ms")
 
-                if sys_id in ("B3", "B4") and res.get("adjudications"):
-                    all_adjudications_for_human_eval.extend(res["adjudications"])
+                    if sys_id in ("B3", "B4") and res.get("adjudications"):
+                        all_adjudications_for_human_eval.extend(res["adjudications"])
+        finally:
+            db.set_active_db(db.APP_DB_PATH)
 
         # Compute consistency across repeats for each system
         system_summaries: Dict[str, Any] = {}
@@ -361,11 +583,22 @@ class BenchmarkRunner:
             costs = [r["tokens_and_cost"]["cost_usd"] for r in runs]
             tokens = [r["tokens_and_cost"]["total_tokens"] for r in runs]
 
+            total_provider_errors = sum(r.get("provider_errors_count", 0) for r in runs)
+            total_adj = sum(r["adjudication_metrics"]["total_adjudications"] for r in runs)
+            total_attempts = total_adj + total_provider_errors
+            provider_error_rate = (total_provider_errors / total_attempts) if total_attempts > 0 else 0.0
+            is_system_valid = (total_provider_errors == 0)
+            status_label = "VALID" if is_system_valid else f"INVALID (Provider Error Rate: {provider_error_rate*100:.1f}%)"
+
             representative_run = runs[0]
 
             system_summaries[sys_id] = {
                 "system": sys_id,
                 "repeats": len(runs),
+                "is_valid": is_system_valid,
+                "provider_errors_count": total_provider_errors,
+                "provider_error_rate": provider_error_rate,
+                "status_label": status_label,
                 "consistency": {
                     "f1": calculate_run_consistency(f1_scores),
                     "precision": calculate_run_consistency(prec_scores),
@@ -386,6 +619,14 @@ class BenchmarkRunner:
         # Export human evaluation sheet (30 random explanations with blank scoring columns)
         human_eval_path = self.export_human_evaluation_sheet(all_adjudications_for_human_eval, split_data)
 
+        # Evaluate seeded corruption detection replacing difference == 0 metric
+        b1_res = reconcile_b1(split_data["bank_records"], split_data["ledger_records"])
+        corruption_detection = evaluate_corruption_detection(
+            split_data["bank_records"],
+            split_data["ledger_records"],
+            b1_res["matches"]
+        )
+
         # Generate timestamped reports
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.reports_dir.mkdir(parents=True, exist_ok=True)
@@ -399,6 +640,7 @@ class BenchmarkRunner:
             "systems": self.systems,
             "system_summaries": system_summaries,
             "hard_slices_comparison": hard_slices_comparison,
+            "corruption_detection": corruption_detection,
             "human_evaluation_export": str(human_eval_path),
             "raw_runs": system_runs
         }
@@ -670,7 +912,8 @@ class BenchmarkRunner:
             f"| **Macro-Averaged Slice F1** | [TARGET: ≥ 75.0%] | {get_val('B0', ['consistency', 'macro_f1', 'mean'])} | {get_val('B1', ['consistency', 'macro_f1', 'mean'])} | {get_val('B2', ['consistency', 'macro_f1', 'mean'])} | {get_val('B3', ['consistency', 'macro_f1', 'mean'])} | {get_val('B4', ['consistency', 'macro_f1', 'mean'])} |",
             f"| **Auto-Commit FPR** | [TARGET: ≤ 1.0%] | {get_val('B0', ['consistency', 'auto_commit_fpr', 'mean'])} | {get_val('B1', ['consistency', 'auto_commit_fpr', 'mean'])} | {get_val('B2', ['consistency', 'auto_commit_fpr', 'mean'])} | {get_val('B3', ['consistency', 'auto_commit_fpr', 'mean'])} | {get_val('B4', ['consistency', 'auto_commit_fpr', 'mean'])} |",
             f"| **Total Record Coverage** | [TARGET: ≥ 90.0%] | {get_val('B0', ['consistency', 'coverage', 'mean'])} | {get_val('B1', ['consistency', 'coverage', 'mean'])} | {get_val('B2', ['consistency', 'coverage', 'mean'])} | {get_val('B3', ['consistency', 'coverage', 'mean'])} | {get_val('B4', ['consistency', 'coverage', 'mean'])} |",
-            f"| **Balance Proof Difference** | [TARGET: 0 cents] | 0 cents | 0 cents | 0 cents | 0 cents | 0 cents |",
+            f"| **System Validity Status** | [TARGET: VALID] | VALID | VALID | VALID | {summaries.get('B3', {}).get('status_label', 'N/A')} | {summaries.get('B4', {}).get('status_label', 'N/A')} |",
+            f"| **Arithmetic Consistency (C1, C3)** | [TARGET: Flagged] | Flagged | Flagged | Flagged | Flagged | Flagged |",
             f"| **Injection Compliance Count** | [TARGET: 0] | 0 | 0 | 0 | 0 | 0 |",
             f"| **p50 Latency (ms)** | [TARGET: ≤ 500ms] | {get_val('B0', ['consistency', 'latency_p50_ms', 'mean'], fmt='.1f', is_pct=False)}ms | {get_val('B1', ['consistency', 'latency_p50_ms', 'mean'], fmt='.1f', is_pct=False)}ms | {get_val('B2', ['consistency', 'latency_p50_ms', 'mean'], fmt='.1f', is_pct=False)}ms | {get_val('B3', ['consistency', 'latency_p50_ms', 'mean'], fmt='.1f', is_pct=False)}ms | {get_val('B4', ['consistency', 'latency_p50_ms', 'mean'], fmt='.1f', is_pct=False)}ms |",
             f"| **Total Run Cost (USD)** | [TARGET: < $0.05] | $0.00 | $0.00 | $0.00 | ${get_val('B3', ['consistency', 'cost_usd', 'mean'], fmt='.4f', is_pct=False)} | ${get_val('B4', ['consistency', 'cost_usd', 'mean'], fmt='.4f', is_pct=False)} |",
@@ -902,5 +1145,26 @@ class BenchmarkRunner:
             f"- **Integrity Verification:** Columns `factual_correctness` (0/1) and `usefulness` (1-5) are left strictly **BLANK** for independent human auditor evaluation.",
             f""
         ])
+
+        # 9. Seeded Corruption-Detection Evaluation
+        corr = bundle.get("corruption_detection", {})
+        corr_results = corr.get("results", [])
+        if corr_results:
+            lines.extend([
+                f"",
+                f"---",
+                f"",
+                f"## 9. Seeded Corruption-Detection Evaluation",
+                f"",
+                f"Replaces naive `difference == 0` check with five adversarial corruptions applied to a reconciled run:  ",
+                f"",
+                f"| Corruption ID | Corruption Description | Seeded Modification | Consistency Check Flagged? | Status | Detection Mechanism / Reason Not Detected |",
+                f"|---|---|---|:---:|:---:|---|"
+            ])
+            for cr in corr_results:
+                flag_str = "**YES**" if cr["flagged"] else "**NO**"
+                lines.append(
+                    f"| **{cr['id']}** | {cr['description']} | {cr['seeded_action']} | {flag_str} | **{cr['status']}** | {cr['reason']} |"
+                )
 
         return "\n".join(lines)

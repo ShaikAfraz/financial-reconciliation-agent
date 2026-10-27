@@ -183,7 +183,7 @@ async function loadBalanceProof() {
     }
 
     if (statusTag) {
-      statusTag.textContent = isBalanced ? "[✓ FULLY BALANCED]" : "[OUT OF BALANCE]";
+      statusTag.textContent = isBalanced ? "Consistent" : "Inconsistent";
       statusTag.style.color = isBalanced ? "#34d399" : "#f43f5e";
     }
 
@@ -391,7 +391,7 @@ async function loadReviewQueue() {
             Review Queue Resolved
           </div>
           <div style="color: var(--text-secondary); max-width: 480px; margin: 0 auto; line-height: 1.6;">
-            All escalated and low-confidence items have been adjudicated. Authoritative balance proof variance currently reads 
+            All escalated and low-confidence items have been adjudicated. Arithmetic consistency difference currently reads 
             <strong style="color: #34d399;">$0.00</strong>.
           </div>
         </div>
@@ -431,7 +431,7 @@ async function loadReviewQueue() {
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 0.76rem; font-family: var(--font-mono); color: var(--text-muted);">CONFIDENCE:</span>
-              <span style="font-family: var(--font-mono); font-weight: 700; color: #fbbf24;">${(item.confidence * 100).toFixed(1)}%</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: #fbbf24;">${item.confidence !== null && item.confidence !== undefined ? `${(item.confidence * 100).toFixed(1)}%` : "n/a"}</span>
             </div>
           </div>
 
@@ -472,7 +472,7 @@ async function loadReviewQueue() {
           <div class="deterministic-features-box">
             <div class="features-box-header">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Deterministic Kernel Metrics (Rule 4 Code-Computed)</span>
+              <span>Deterministic Kernel Metrics (Code-Computed)</span>
             </div>
             <div class="features-grid">
               <div class="feature-item">

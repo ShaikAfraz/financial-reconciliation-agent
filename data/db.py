@@ -4,23 +4,39 @@ Manages persistent banking ledger transactions, raw statement descriptors,
 budget limits, and immutable audit logs.
 """
 
+import os
 import sqlite3
 import csv
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 DATA_DIR = Path(__file__).parent.resolve()
-DB_PATH = DATA_DIR / "reconciliation.db"
-CSV_PATH = DATA_DIR / "kaggle_personal_transactions.csv"
+APP_DB_PATH = DATA_DIR / "reconciliation.db"
+BENCH_DB_PATH = Path(os.environ.get("BENCH_DB_PATH", str(DATA_DIR / "benchmark.db")))
+DB_PATH = APP_DB_PATH
 
-def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DB_PATH))
+def set_active_db(path: Path) -> None:
+    global DB_PATH
+    DB_PATH = Path(path)
+
+def get_active_db() -> Path:
+    return DB_PATH
+
+def use_app_db() -> None:
+    set_active_db(APP_DB_PATH)
+
+def use_benchmark_db() -> None:
+    set_active_db(BENCH_DB_PATH)
+
+def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:
+    target = db_path or DB_PATH
+    conn = sqlite3.connect(str(target))
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_database():
+def init_database(db_path: Optional[Path] = None):
     """Initializes SQLite schema and seeds realistic Kaggle-style banking transactions."""
-    conn = get_connection()
+    conn = get_connection(db_path)
     cursor = conn.cursor()
 
     cursor.executescript("""
@@ -415,15 +431,20 @@ def insert_exception(
         conn.commit()
         conn.close()
 
-def reset_reconciliation_tables(conn: Optional[sqlite3.Connection] = None):
+def reset_reconciliation_tables(conn_or_path: Any = None):
     """
     Clears runtime reconciliation state tables between benchmark runs.
     Preserves audit_logs and budget rules.
     """
     should_close = False
-    if conn is None:
+    if conn_or_path is None:
         conn = get_connection()
         should_close = True
+    elif isinstance(conn_or_path, (str, Path)):
+        conn = get_connection(conn_or_path)
+        should_close = True
+    else:
+        conn = conn_or_path
     cursor = conn.cursor()
     cursor.execute("DELETE FROM bank_records")
     cursor.execute("DELETE FROM ledger_records")

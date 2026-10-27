@@ -1,0 +1,365 @@
+================================================================================
+SECTION 1: FULL SOURCE OF reconcile/balance_proof.py
+================================================================================
+"""
+Balance Proof Module for Two-Sided Financial Reconciliation.
+Verifies the fundamental reconciliation proof in integer cents:
+Ending Bank Balance +/- Reconciling Items = Adjusted Book Balance.
+Computes and returns the exact integer cents difference.
+"""
+
+from typing import Dict, Any, List, Set
+
+def compute_balance_proof(
+    bank_records: List[Dict[str, Any]],
+    ledger_records: List[Dict[str, Any]],
+    matches: List[Dict[str, Any]],
+    opening_bank_balance_cents: int = 0,
+    opening_book_balance_cents: int = 0
+) -> Dict[str, Any]:
+    """
+    Computes the authoritative Two-Sided Balance Proof in integer cents.
+
+    Formulation:
+      Ending Bank Balance = Opening Bank + Total Bank Statement Activity
+      Ending Book Balance = Opening Book + Total General Ledger Activity
+
+      Reconciling Items:
+        - Unmatched Ledger Records (In-transit / Outstanding items)
+        - Unmatched Bank Records (Bank charges / Unposted deposits)
+        - Fee Adjustments (Gross vs Net processing fees)
+
+      Adjusted Bank Balance = Ending Bank Balance + Unmatched Ledger Items
+      Adjusted Book Balance = Ending Book Balance + Unmatched Bank Items - Fee Adjustments
+
+      Difference = Adjusted Bank Balance - Adjusted Book Balance
+
+    Returns:
+      Dict with all line items and difference_cents (0 when perfectly reconciled).
+    """
+    # Strict integer cents type validation
+    for val in (opening_bank_balance_cents, opening_book_balance_cents):
+        if not isinstance(val, int) or isinstance(val, bool):
+            raise TypeError(f"Opening balances must be integer cents, got {type(val).__name__}")
+
+    # 1. Ending balances
+    bank_activity_cents = 0
+    for b in bank_records:
+        amt = b.get("amount_cents", 0)
+        if not isinstance(amt, int) or isinstance(amt, bool):
+            raise TypeError(f"bank record amount_cents must be int, got {type(amt).__name__}")
+        bank_activity_cents += amt
+
+    book_activity_cents = 0
+    for l in ledger_records:
+        amt = l.get("amount_cents", 0)
+        if not isinstance(amt, int) or isinstance(amt, bool):
+            raise TypeError(f"ledger record amount_cents must be int, got {type(amt).__name__}")
+        book_activity_cents += amt
+
+    ending_bank_balance_cents = opening_bank_balance_cents + bank_activity_cents
+    ending_book_balance_cents = opening_book_balance_cents + book_activity_cents
+
+    # 2. Extract matched IDs and fees from matches
+    matched_bank_ids: Set[str] = set()
+    matched_ledger_ids: Set[str] = set()
+    fee_adjustments_cents = 0
+
+    for m in matches:
+        if m.get("status") in ("matched", "suggested", "approved"):
+            for bid in m.get("bank_record_ids", []):
+                matched_bank_ids.add(bid)
+            for lid in m.get("ledger_record_ids", []):
+                matched_ledger_ids.add(lid)
+            fee = m.get("metadata", {}).get("fee_cents", 0) if isinstance(m.get("metadata"), dict) else 0
+            if not isinstance(fee, int) or isinstance(fee, bool):
+                raise TypeError(f"fee_cents must be integer cents, got {type(fee).__name__}")
+            fee_adjustments_cents += fee
+
+    # 3. Reconciling items
+    unmatched_ledger_cents = 0
+    unmatched_ledger_count = 0
+    for l in ledger_records:
+        if l["id"] not in matched_ledger_ids:
+            unmatched_ledger_cents += int(l["amount_cents"])
+            unmatched_ledger_count += 1
+
+    unmatched_bank_cents = 0
+    unmatched_bank_count = 0
+    for b in bank_records:
+        if b["id"] not in matched_bank_ids:
+            unmatched_bank_cents += int(b["amount_cents"])
+            unmatched_bank_count += 1
+
+    # 4. Adjusted balances
+    adjusted_bank_balance_cents = ending_bank_balance_cents + unmatched_ledger_cents
+    adjusted_book_balance_cents = ending_book_balance_cents + unmatched_bank_cents - fee_adjustments_cents
+
+    # 5. Difference
+    difference_cents = adjusted_bank_balance_cents - adjusted_book_balance_cents
+
+    return {
+        "opening_bank_balance_cents": opening_bank_balance_cents,
+        "opening_book_balance_cents": opening_book_balance_cents,
+        "ending_bank_balance_cents": ending_bank_balance_cents,
+        "ending_book_balance_cents": ending_book_balance_cents,
+        "unmatched_ledger_records_count": unmatched_ledger_count,
+        "unmatched_ledger_cents": unmatched_ledger_cents,
+        "unmatched_bank_records_count": unmatched_bank_count,
+        "unmatched_bank_cents": unmatched_bank_cents,
+        "fee_adjustments_cents": fee_adjustments_cents,
+        "adjusted_bank_balance_cents": adjusted_bank_balance_cents,
+        "adjusted_book_balance_cents": adjusted_book_balance_cents,
+        "difference_cents": difference_cents,
+        "is_balanced": difference_cents == 0
+    }
+
+
+================================================================================
+SECTION 2: FULL SOURCE OF INPUT-SUPPLYING FUNCTION IN reconcile/service.py
+(reconcile/service.py: lines 257 to 336)
+================================================================================
+def get_balance_proof() -> Dict[str, Any]:
+    """
+    Computes the authoritative Two-Sided Balance Proof in integer cents
+    from the current database state.
+    """
+    ensure_database_seeded()
+    conn = db.get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records")
+    bank_records = [dict(r) for r in cursor.fetchall()]
+
+    cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records")
+    ledger_records = [dict(r) for r in cursor.fetchall()]
+
+    cursor.execute("SELECT match_id, status, method, confidence FROM matches")
+    matches_raw = [dict(r) for r in cursor.fetchall()]
+
+    cursor.execute("SELECT match_id, side, record_id FROM match_members")
+    members_raw = cursor.fetchall()
+
+    conn.close()
+
+    # Reconstruct match member arrays
+    members_by_match = {}
+    for row in members_raw:
+        mid = row["match_id"]
+        side = row["side"]
+        rid = row["record_id"]
+        if mid not in members_by_match:
+            members_by_match[mid] = {"bank": [], "ledger": []}
+        members_by_match[mid][side].append(rid)
+
+    bank_by_id = {b["id"]: b["amount_cents"] for b in bank_records}
+    ledger_by_id = {l["id"]: l["amount_cents"] for l in ledger_records}
+
+    full_matches = []
+    for m in matches_raw:
+        mid = m["match_id"]
+        members = members_by_match.get(mid, {"bank": [], "ledger": []})
+        b_ids = members["bank"]
+        l_ids = members["ledger"]
+        
+        # Calculate fee if ledger > bank
+        fee_cents = 0
+        if b_ids and l_ids:
+            b_sum = sum(bank_by_id.get(bid, 0) for bid in b_ids)
+            l_sum = sum(ledger_by_id.get(lid, 0) for lid in l_ids)
+            if l_sum > b_sum and (l_sum - b_sum) <= MAX_FEE_TOLERANCE_CENTS:
+                fee_cents = l_sum - b_sum
+
+        full_matches.append({
+            "match_id": mid,
+            "status": m["status"],
+            "method": m["method"],
+            "confidence": m["confidence"],
+            "bank_record_ids": b_ids,
+            "ledger_record_ids": l_ids,
+            "metadata": {"fee_cents": fee_cents}
+        })
+
+    proof = compute_balance_proof(
+        bank_records=bank_records,
+        ledger_records=ledger_records,
+        matches=full_matches,
+        opening_bank_balance_cents=0,
+        opening_book_balance_cents=0
+    )
+
+    diff_cents = proof["difference_cents"]
+    proof["difference_formatted"] = format_cents(diff_cents)
+    proof["ending_bank_balance_formatted"] = format_cents(proof["ending_bank_balance_cents"])
+    proof["ending_book_balance_formatted"] = format_cents(proof["ending_book_balance_cents"])
+    proof["adjusted_bank_balance_formatted"] = format_cents(proof["adjusted_bank_balance_cents"])
+    proof["adjusted_book_balance_formatted"] = format_cents(proof["adjusted_book_balance_cents"])
+    proof["unmatched_bank_formatted"] = format_cents(proof["unmatched_bank_cents"])
+    proof["unmatched_ledger_formatted"] = format_cents(proof["unmatched_ledger_cents"])
+    proof["fee_adjustments_formatted"] = format_cents(proof["fee_adjustments_cents"])
+
+    return proof
+
+
+================================================================================
+SECTION 3: EXACT ORIGIN OF "ENDING BANK BALANCE" AND "ENDING BOOK BALANCE"
+================================================================================
+1. Database Query Source:
+   reconcile/service.py:266-270
+   ```python
+   cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records")
+   bank_records = [dict(r) for r in cursor.fetchall()]
+
+   cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records")
+   ledger_records = [dict(r) for r in cursor.fetchall()]
+   ```
+
+2. Input Pass to Engine:
+   reconcile/service.py:318-324
+   ```python
+   proof = compute_balance_proof(
+       bank_records=bank_records,
+       ledger_records=ledger_records,
+       matches=full_matches,
+       opening_bank_balance_cents=0,
+       opening_book_balance_cents=0
+   )
+   ```
+
+3. Computation of Ending Balances:
+   reconcile/balance_proof.py:43-58
+   ```python
+   # 1. Ending balances
+   bank_activity_cents = 0
+   for b in bank_records:
+       amt = b.get("amount_cents", 0)
+       if not isinstance(amt, int) or isinstance(amt, bool):
+           raise TypeError(f"bank record amount_cents must be int, got {type(amt).__name__}")
+       bank_activity_cents += amt
+
+   book_activity_cents = 0
+   for l in ledger_records:
+       amt = l.get("amount_cents", 0)
+       if not isinstance(amt, int) or isinstance(amt, bool):
+           raise TypeError(f"ledger record amount_cents must be int, got {type(amt).__name__}")
+       book_activity_cents += amt
+
+   ending_bank_balance_cents = opening_bank_balance_cents + bank_activity_cents
+   ending_book_balance_cents = opening_book_balance_cents + book_activity_cents
+   ```
+
+"Ending Bank Balance" is the sum of opening_bank_balance_cents (0) plus the sum of all amount_cents from bank_records.
+"Ending Book Balance" is the sum of opening_book_balance_cents (0) plus the sum of all amount_cents from ledger_records.
+
+
+================================================================================
+SECTION 4: EXPERIMENT ON A COPY OF THE DATABASE
+================================================================================
+Setup:
+  A clean copy of data/reconciliation.db was created at data/reconciliation_experiment.db.
+  The service module was pointed directly to this isolated copy.
+
+Experiment Action:
+  1. Full balance proof output was captured before any change.
+  2. One match was rejected via service.reject_match:
+     Match rejected: MATCH-B0-0001
+     Bank Member: BANK-DEV-0001 (amount: $1,948.93 / 194893 cents)
+     Ledger Member: LEDGER-DEV-0001 (amount: $1,948.93 / 194893 cents)
+     Service function call: service.reject_match(match_id="MATCH-B0-0001", reviewer_note="Auditor rejection experiment")
+  3. Full balance proof output was captured again.
+
+--- FULL BALANCE-PROOF OUTPUT BEFORE REJECT ---
+{
+  "opening_bank_balance_cents": 0,
+  "opening_book_balance_cents": 0,
+  "ending_bank_balance_cents": 25720384,
+  "ending_book_balance_cents": 28351653,
+  "unmatched_ledger_records_count": 83,
+  "unmatched_ledger_cents": 9979439,
+  "unmatched_bank_records_count": 64,
+  "unmatched_bank_cents": 7348170,
+  "fee_adjustments_cents": 0,
+  "adjusted_bank_balance_cents": 35699823,
+  "adjusted_book_balance_cents": 35699823,
+  "difference_cents": 0,
+  "is_balanced": true,
+  "difference_formatted": "0.00",
+  "ending_bank_balance_formatted": "257203.84",
+  "ending_book_balance_formatted": "283516.53",
+  "adjusted_bank_balance_formatted": "356998.23",
+  "adjusted_book_balance_formatted": "356998.23",
+  "unmatched_bank_formatted": "73481.70",
+  "unmatched_ledger_formatted": "99794.39",
+  "fee_adjustments_formatted": "0.00"
+}
+
+--- FULL BALANCE-PROOF OUTPUT AFTER REJECT ---
+{
+  "opening_bank_balance_cents": 0,
+  "opening_book_balance_cents": 0,
+  "ending_bank_balance_cents": 25720384,
+  "ending_book_balance_cents": 28351653,
+  "unmatched_ledger_records_count": 84,
+  "unmatched_ledger_cents": 10174332,
+  "unmatched_bank_records_count": 65,
+  "unmatched_bank_cents": 7543063,
+  "fee_adjustments_cents": 0,
+  "adjusted_bank_balance_cents": 35894716,
+  "adjusted_book_balance_cents": 35894716,
+  "difference_cents": 0,
+  "is_balanced": true,
+  "difference_formatted": "0.00",
+  "ending_bank_balance_formatted": "257203.84",
+  "ending_book_balance_formatted": "283516.53",
+  "adjusted_bank_balance_formatted": "358947.16",
+  "adjusted_book_balance_formatted": "358947.16",
+  "unmatched_bank_formatted": "75430.63",
+  "unmatched_ledger_formatted": "101743.32",
+  "fee_adjustments_formatted": "0.00"
+}
+
+--- REPORT OF EVERY NUMBER THAT CHANGED ---
+1. unmatched_ledger_records_count:
+   Before: 83
+   After:  84
+   Delta:  +1
+
+2. unmatched_ledger_cents:
+   Before: 9979439 ($99,794.39)
+   After:  10174332 ($101,743.32)
+   Delta:  +194893 cents (+$1,948.93)
+
+3. unmatched_bank_records_count:
+   Before: 64
+   After:  65
+   Delta:  +1
+
+4. unmatched_bank_cents:
+   Before: 7348170 ($73,481.70)
+   After:  7543063 ($75,430.63)
+   Delta:  +194893 cents (+$1,948.93)
+
+5. adjusted_bank_balance_cents:
+   Before: 35699823 ($356,998.23)
+   After:  35894716 ($358,947.16)
+   Delta:  +194893 cents (+$1,948.93)
+
+6. adjusted_book_balance_cents:
+   Before: 35699823 ($356,998.23)
+   After:  35894716 ($358,947.16)
+   Delta:  +194893 cents (+$1,948.93)
+
+--- REPORT OF NUMBERS THAT REMAINED UNCHANGED ---
+- opening_bank_balance_cents: 0 (Unchanged)
+- opening_book_balance_cents: 0 (Unchanged)
+- ending_bank_balance_cents: 25720384 / $257,203.84 (Unchanged)
+- ending_book_balance_cents: 28351653 / $283,516.53 (Unchanged)
+- fee_adjustments_cents: 0 (Unchanged)
+- difference_cents: 0 (Unchanged)
+- is_balanced: True (Unchanged)
+
+--- STATEMENT REGARDING ENDING BALANCES ---
+Did a statement's ending balance change because of a review decision?
+PLAIN STATEMENT: NO.
+The statement's ending bank balance (25,720,384 cents / $257,203.84) and general ledger ending book balance (28,351,653 cents / $283,516.53) did NOT change.
+Ending balances reflect raw statement transaction activity, which is immutable regardless of review decisions. Only reconciling items (unmatched record counts, unmatched cents, and adjusted balances) changed.

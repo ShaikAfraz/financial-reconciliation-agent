@@ -216,6 +216,7 @@ class FinancialReconciliationAgent:
 
         ledger_map = {l["id"]: l for l in ledger_records}
         adjudications_recorded = []
+        provider_errors_count = 0
 
         # Form candidate subsets for ambiguous bank items
         for b_item in unmatched_bank:
@@ -276,8 +277,20 @@ class FinancialReconciliationAgent:
                 "validation": val_dict
             })
 
+            # Check for provider failure - provider errors must NEVER be counted as system decisions
+            rej_reason = str(outcome_dict.get("rejection_reason", "")) + " " + str(val_dict.get("rejection_reason", ""))
+            is_provider_error = "Provider error:" in rej_reason or outcome_dict.get("is_provider_error", False)
+
             # 4c. Authoritative Gateway
-            if val_dict.get("is_valid") and outcome_dict.get("auto_commit") and outcome_dict.get("decision") == "select":
+            if is_provider_error:
+                provider_errors_count += 1
+                db.insert_exception(
+                    record_id=b_item["id"],
+                    side="bank",
+                    exc_type="provider_error",
+                    status="provider_failed"
+                )
+            elif val_dict.get("is_valid") and outcome_dict.get("auto_commit") and outcome_dict.get("decision") == "select":
                 token = val_dict.get("validator_token")
                 m_id = f"MATCH-ADJ-{b_item['id']}"
                 sel_ids = val_dict.get("selected_candidate_ids", [])
@@ -375,6 +388,7 @@ class FinancialReconciliationAgent:
             "auto_committed": auto_committed_count,
             "escalated": escalated_count,
             "rejected": rejected_count,
+            "provider_errors": provider_errors_count,
             "matches": committed_matches,
             "balance_proof": proof,
             "total_steps": len(trace.steps),
