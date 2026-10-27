@@ -1,25 +1,37 @@
 // ==========================================================================
-// Veritas Treasury • Autonomous Financial Reconciliation & Audit Suite
-// Emerald Edition Design System Controller & Interactive ReAct Engine
+// Veritas Treasury • Autonomous Two-Sided Financial Reconciliation Suite
+// Emerald Edition Design System Controller & Human Auditor Workstation
 // ==========================================================================
 
-let scenariosList = [];
-let toolsList = [];
-let carouselInterval = null;
-let currentSlideIndex = 0;
+let currentFilter = "all";
+let currentSearch = "";
+let currentSplit = "dev";
+let isSyncing = false;
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTabs();
   initLiveClock();
-  initCarousel();
-  loadScenarios();
-  loadLedger();
-  loadTools();
-  setupEventListeners();
+  initTabs();
+  initToolbarControls();
+  
+  // Initial data load
+  refreshAllData();
 });
 
 // --------------------------------------------------------------------------
-// 1. Live System Clock
+// 1. Strict Security: Text Escaping (Prevents XSS Injection)
+// --------------------------------------------------------------------------
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// --------------------------------------------------------------------------
+// 2. Live System Clock
 // --------------------------------------------------------------------------
 function initLiveClock() {
   const clockEl = document.getElementById("live-clock");
@@ -34,7 +46,7 @@ function initLiveClock() {
 }
 
 // --------------------------------------------------------------------------
-// 2. Navigation Tabs
+// 3. Navigation Tabs
 // --------------------------------------------------------------------------
 function initTabs() {
   const tabBtns = document.querySelectorAll(".tab-button");
@@ -55,811 +67,736 @@ function initTabs() {
       const activePanel = document.getElementById(`tab-${target}`);
       if (activePanel) {
         activePanel.classList.add("active");
-        // Trigger subtle entrance
-        activePanel.style.animation = 'none';
-        activePanel.offsetHeight; /* trigger reflow */
-        activePanel.style.animation = null;
+        // Refresh specific tab data on activation
+        if (target === "reconcile") loadRecords();
+        if (target === "queue") loadReviewQueue();
+        if (target === "audit") loadAuditLogs();
+        if (target === "tools") loadTools();
       }
     });
   });
 }
 
 // --------------------------------------------------------------------------
-// 3. Interactive Showcase Carousel (Touch, Drag, Autoplay, Dots)
+// 4. Toolbar & Filter Controls
 // --------------------------------------------------------------------------
-function initCarousel() {
-  const track = document.getElementById("carousel-track");
-  const dotsContainer = document.getElementById("carousel-dots");
-  const prevBtn = document.getElementById("carousel-prev");
-  const nextBtn = document.getElementById("carousel-next");
-  const viewport = document.querySelector(".carousel-track-viewport");
+function initToolbarControls() {
+  const splitSelect = document.getElementById("split-select");
+  const btnReloadSplit = document.getElementById("btn-reload-split");
+  const searchInput = document.getElementById("reconcile-search");
+  const filterBtns = document.querySelectorAll(".filter-chip-btn");
+  const btnRefreshAudit = document.getElementById("btn-refresh-audit");
 
-  if (!track || !viewport) return;
-
-  const slides = track.querySelectorAll(".carousel-slide");
-  const totalSlides = slides.length;
-  if (totalSlides === 0) return;
-
-  // Build Dots
-  if (dotsContainer) {
-    dotsContainer.innerHTML = "";
-    for (let i = 0; i < totalSlides; i++) {
-      const dot = document.createElement("button");
-      dot.className = `carousel-dot ${i === 0 ? "active" : ""}`;
-      dot.setAttribute("aria-label", `Slide ${i + 1}`);
-      dot.addEventListener("click", () => {
-        goToSlide(i);
-        restartAutoplay();
-      });
-      dotsContainer.appendChild(dot);
-    }
-  }
-
-  function getSlideStep() {
-    const slide = slides[0];
-    if (!slide) return 320;
-    const style = window.getComputedStyle(track);
-    const gap = parseFloat(style.gap) || 16;
-    return slide.offsetWidth + gap;
-  }
-
-  function maxIndex() {
-    const vpWidth = viewport.offsetWidth;
-    const slideWidth = getSlideStep();
-    const visibleCount = Math.floor(vpWidth / slideWidth) || 1;
-    return Math.max(0, totalSlides - visibleCount);
-  }
-
-  function updateSlide() {
-    const step = getSlideStep();
-    const maxIdx = maxIndex();
-    if (currentSlideIndex > maxIdx) currentSlideIndex = maxIdx;
-    if (currentSlideIndex < 0) currentSlideIndex = 0;
-
-    const offset = currentSlideIndex * step;
-    track.style.transform = `translateX(-${offset}px)`;
-
-    // Update Dots
-    if (dotsContainer) {
-      const dots = dotsContainer.querySelectorAll(".carousel-dot");
-      dots.forEach((d, idx) => {
-        d.classList.toggle("active", idx === currentSlideIndex);
-      });
-    }
-  }
-
-  function nextSlide() {
-    const maxIdx = maxIndex();
-    if (currentSlideIndex >= maxIdx) {
-      currentSlideIndex = 0;
-    } else {
-      currentSlideIndex++;
-    }
-    updateSlide();
-  }
-
-  function prevSlide() {
-    const maxIdx = maxIndex();
-    if (currentSlideIndex <= 0) {
-      currentSlideIndex = maxIdx;
-    } else {
-      currentSlideIndex--;
-    }
-    updateSlide();
-  }
-
-  function goToSlide(idx) {
-    currentSlideIndex = idx;
-    updateSlide();
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-      nextSlide();
-      restartAutoplay();
+  if (splitSelect) {
+    splitSelect.addEventListener("change", (e) => {
+      currentSplit = e.target.value;
     });
   }
 
-  if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
-      prevSlide();
-      restartAutoplay();
+  if (btnReloadSplit) {
+    btnReloadSplit.addEventListener("click", async () => {
+      if (isSyncing) return;
+      btnReloadSplit.disabled = true;
+      btnReloadSplit.innerHTML = `<span>Loading ${currentSplit}...</span>`;
+      try {
+        const res = await fetch("/api/reconciliation/load-split", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ split: currentSplit })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showNotification(`Successfully loaded ${currentSplit.toUpperCase()} split (${data.bank_records_count} bank, ${data.ledger_records_count} ledger records)`, "success");
+          await refreshAllData();
+        } else {
+          showNotification(data.error || "Failed to load split", "error");
+        }
+      } catch (err) {
+        showNotification("Network error loading split", "error");
+      } finally {
+        btnReloadSplit.disabled = false;
+        btnReloadSplit.innerHTML = `<span>Reload Split</span>`;
+      }
     });
   }
 
-  // Autoplay
-  function startAutoplay() {
-    stopAutoplay();
-    // Do not autoplay if user prefers reduced motion
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-    carouselInterval = setInterval(nextSlide, 5000);
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentSearch = e.target.value.trim();
+        loadRecords();
+      }, 250);
+    });
   }
 
-  function stopAutoplay() {
-    if (carouselInterval) {
-      clearInterval(carouselInterval);
-      carouselInterval = null;
-    }
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentFilter = btn.getAttribute("data-filter");
+      loadRecords();
+    });
+  });
+
+  if (btnRefreshAudit) {
+    btnRefreshAudit.addEventListener("click", loadAuditLogs);
   }
-
-  function restartAutoplay() {
-    stopAutoplay();
-    startAutoplay();
-  }
-
-  viewport.addEventListener("mouseenter", stopAutoplay);
-  viewport.addEventListener("mouseleave", startAutoplay);
-
-  // Drag & Swipe gesture handling
-  let isDragging = false;
-  let startX = 0;
-  let currentTranslate = 0;
-  let prevTranslate = 0;
-
-  viewport.addEventListener("touchstart", (e) => {
-    stopAutoplay();
-    isDragging = true;
-    startX = e.touches[0].clientX;
-  }, { passive: true });
-
-  viewport.addEventListener("touchmove", (e) => {
-    if (!isDragging) return;
-  }, { passive: true });
-
-  viewport.addEventListener("touchend", (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
-    if (diff > 45) {
-      prevSlide();
-    } else if (diff < -45) {
-      nextSlide();
-    }
-    restartAutoplay();
-  });
-
-  // Mouse Drag support
-  viewport.addEventListener("mousedown", (e) => {
-    stopAutoplay();
-    isDragging = true;
-    startX = e.clientX;
-  });
-
-  window.addEventListener("mouseup", (e) => {
-    if (!isDragging) return;
-    isDragging = false;
-    const diff = e.clientX - startX;
-    if (diff > 50) {
-      prevSlide();
-    } else if (diff < -50) {
-      nextSlide();
-    }
-    restartAutoplay();
-  });
-
-  window.addEventListener("resize", () => {
-    updateSlide();
-  });
-
-  startAutoplay();
-  updateSlide();
 }
 
-// Global helper to load a scenario directly from the carousel card
-window.selectAndRunCarouselScenario = function(scId) {
-  const select = document.getElementById("scenario-select");
-  if (!select) return;
+// --------------------------------------------------------------------------
+// 5. Global Data Refresh
+// --------------------------------------------------------------------------
+async function refreshAllData() {
+  await Promise.all([
+    loadBalanceProof(),
+    loadRecords(),
+    loadReviewQueue(),
+    loadAuditLogs(),
+    loadTools()
+  ]);
+}
 
-  select.value = scId;
-  select.dispatchEvent(new Event("change"));
+// --------------------------------------------------------------------------
+// 6. Balance Proof Panel (Integer Cents Verification)
+// --------------------------------------------------------------------------
+async function loadBalanceProof() {
+  try {
+    const res = await fetch("/api/reconciliation/balance-proof");
+    if (!res.ok) return;
+    const proof = await res.json();
 
-  // Smooth scroll down to dispatch panel
-  const dispatchPanel = document.querySelector(".dispatch-panel");
-  if (dispatchPanel) {
-    dispatchPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    // Soft focus pulse
-    dispatchPanel.style.borderColor = "var(--accent-primary)";
-    dispatchPanel.style.boxShadow = "0 0 25px rgba(16, 185, 129, 0.4)";
-    setTimeout(() => {
-      dispatchPanel.style.borderColor = "";
-      dispatchPanel.style.boxShadow = "";
-    }, 1200);
+    const variancePill = document.getElementById("proof-variance-pill");
+    const varianceLabel = document.getElementById("proof-variance-label");
+    const statusTag = document.getElementById("proof-status-tag");
+
+    const diffFormatted = proof.difference_formatted || "0.00";
+    const isBalanced = proof.is_balanced === true;
+
+    if (varianceLabel) {
+      varianceLabel.textContent = `Difference: $${diffFormatted}`;
+    }
+
+    if (variancePill) {
+      variancePill.className = `proof-variance-pill ${isBalanced ? "balanced" : "unbalanced"}`;
+    }
+
+    if (statusTag) {
+      statusTag.textContent = isBalanced ? "[✓ FULLY BALANCED]" : "[OUT OF BALANCE]";
+      statusTag.style.color = isBalanced ? "#34d399" : "#f43f5e";
+    }
+
+    // Metric line items
+    const elEndingBank = document.getElementById("proof-ending-bank");
+    const elEndingBook = document.getElementById("proof-ending-book");
+    const elUnmatchedLedger = document.getElementById("proof-unmatched-ledger");
+    const elUnmatchedBank = document.getElementById("proof-unmatched-bank");
+    const elFees = document.getElementById("proof-fees");
+    const elAdjParity = document.getElementById("proof-adjusted-parity");
+
+    const elUnmatchedLedgerCount = document.getElementById("proof-unmatched-ledger-count");
+    const elUnmatchedBankCount = document.getElementById("proof-unmatched-bank-count");
+
+    if (elEndingBank) elEndingBank.textContent = `$${proof.ending_bank_balance_formatted || "0.00"}`;
+    if (elEndingBook) elEndingBook.textContent = `$${proof.ending_book_balance_formatted || "0.00"}`;
+    if (elUnmatchedLedger) elUnmatchedLedger.textContent = `$${proof.unmatched_ledger_formatted || "0.00"}`;
+    if (elUnmatchedBank) elUnmatchedBank.textContent = `$${proof.unmatched_bank_formatted || "0.00"}`;
+    if (elFees) elFees.textContent = `$${proof.fee_adjustments_formatted || "0.00"}`;
+    if (elAdjParity) elAdjParity.textContent = `$${proof.adjusted_bank_balance_formatted || "0.00"}`;
+
+    if (elUnmatchedLedgerCount) elUnmatchedLedgerCount.textContent = proof.unmatched_ledger_records_count || 0;
+    if (elUnmatchedBankCount) elUnmatchedBankCount.textContent = proof.unmatched_bank_records_count || 0;
+
+  } catch (err) {
+    console.error("Failed to load balance proof:", err);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 7. Side-by-Side Bank vs Ledger View with Matched Groups
+// --------------------------------------------------------------------------
+async function loadRecords() {
+  const bankTbody = document.getElementById("bank-table-body");
+  const ledgerTbody = document.getElementById("ledger-table-body");
+  const countBankEl = document.getElementById("count-bank");
+  const countLedgerEl = document.getElementById("count-ledger");
+  const countMatchesEl = document.getElementById("count-matches");
+  const bankLoadedCount = document.getElementById("bank-loaded-count");
+  const ledgerLoadedCount = document.getElementById("ledger-loaded-count");
+
+  try {
+    const params = new URLSearchParams({
+      status: currentFilter,
+      search: currentSearch,
+      limit: "500"
+    });
+
+    const res = await fetch(`/api/reconciliation/records?${params.toString()}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const bankRecords = data.bank_records || [];
+    const ledgerRecords = data.ledger_records || [];
+
+    if (countBankEl) countBankEl.textContent = data.total_bank || bankRecords.length;
+    if (countLedgerEl) countLedgerEl.textContent = data.total_ledger || ledgerRecords.length;
+    if (countMatchesEl) countMatchesEl.textContent = data.matches_count || 0;
+    if (bankLoadedCount) bankLoadedCount.textContent = `${bankRecords.length} records`;
+    if (ledgerLoadedCount) ledgerLoadedCount.textContent = `${ledgerRecords.length} records`;
+
+    // Render Bank Side
+    if (bankRecords.length === 0) {
+      bankTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">No bank records match filter criteria.</td></tr>`;
+    } else {
+      let bHtml = "";
+      for (const r of bankRecords) {
+        const matchId = r.match_id;
+        const matchStatus = r.match_status || "unmatched";
+        let chipClass = "unmatched";
+        let chipLabel = "Unmatched";
+
+        if (matchId) {
+          if (matchStatus === "approved" || matchStatus === "matched") {
+            chipClass = "";
+            chipLabel = matchId.replace("MATCH-B1-", "M-").replace("MATCH-", "M-");
+          } else if (matchStatus === "pending_review") {
+            chipClass = "pending";
+            chipLabel = `${matchId.replace("MATCH-B1-", "M-").replace("MATCH-", "M-")} (Review)`;
+          } else if (matchStatus === "rejected") {
+            chipClass = "unmatched";
+            chipLabel = "Rejected";
+          }
+        }
+
+        bHtml += `
+          <tr data-record-id="${escapeHtml(r.id)}" data-match-id="${escapeHtml(matchId || '')}">
+            <td>
+              <span class="match-group-chip ${chipClass}" data-match-id="${escapeHtml(matchId || '')}" title="${escapeHtml(matchId || 'Unmatched')}">
+                ${escapeHtml(chipLabel)}
+              </span>
+            </td>
+            <td><strong style="color: var(--text-primary); font-family: var(--font-mono);">${escapeHtml(r.id)}</strong></td>
+            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.date)}</span></td>
+            <td><span style="font-family: var(--font-mono); font-weight: 700; color: #34d399;">$${escapeHtml(r.amount_formatted)}</span></td>
+            <td><span class="descriptor-text" title="${escapeHtml(r.description)}">${escapeHtml(r.description)}</span></td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(r.reference || '—')}</span></td>
+          </tr>
+        `;
+      }
+      bankTbody.innerHTML = bHtml;
+    }
+
+    // Render Ledger Side
+    if (ledgerRecords.length === 0) {
+      ledgerTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">No ledger records match filter criteria.</td></tr>`;
+    } else {
+      let lHtml = "";
+      for (const r of ledgerRecords) {
+        const matchId = r.match_id;
+        const matchStatus = r.match_status || "unmatched";
+        let chipClass = "unmatched";
+        let chipLabel = "Unmatched";
+
+        if (matchId) {
+          if (matchStatus === "approved" || matchStatus === "matched") {
+            chipClass = "";
+            chipLabel = matchId.replace("MATCH-B1-", "M-").replace("MATCH-", "M-");
+          } else if (matchStatus === "pending_review") {
+            chipClass = "pending";
+            chipLabel = `${matchId.replace("MATCH-B1-", "M-").replace("MATCH-", "M-")} (Review)`;
+          } else if (matchStatus === "rejected") {
+            chipClass = "unmatched";
+            chipLabel = "Rejected";
+          }
+        }
+
+        lHtml += `
+          <tr data-record-id="${escapeHtml(r.id)}" data-match-id="${escapeHtml(matchId || '')}">
+            <td>
+              <span class="match-group-chip ${chipClass}" data-match-id="${escapeHtml(matchId || '')}" title="${escapeHtml(matchId || 'Unmatched')}">
+                ${escapeHtml(chipLabel)}
+              </span>
+            </td>
+            <td><strong style="color: var(--text-primary); font-family: var(--font-mono);">${escapeHtml(r.id)}</strong></td>
+            <td><span style="font-family: var(--font-mono); color: var(--text-muted);">${escapeHtml(r.date)}</span></td>
+            <td><span style="font-family: var(--font-mono); font-weight: 700; color: #60a5fa;">$${escapeHtml(r.amount_formatted)}</span></td>
+            <td><span class="descriptor-text" title="${escapeHtml(r.description)}">${escapeHtml(r.description)}</span></td>
+            <td><span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(r.reference || '—')}</span></td>
+          </tr>
+        `;
+      }
+      ledgerTbody.innerHTML = lHtml;
+    }
+
+    // Attach synchronized match group hover listeners
+    attachMatchGroupHoverListeners();
+
+  } catch (err) {
+    console.error("Failed to load records:", err);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 8. Match Group Synchronized Highlighting
+// --------------------------------------------------------------------------
+function attachMatchGroupHoverListeners() {
+  const chips = document.querySelectorAll(".match-group-chip");
+  chips.forEach((chip) => {
+    const mid = chip.getAttribute("data-match-id");
+    if (!mid) return;
+
+    chip.addEventListener("mouseenter", () => {
+      document.querySelectorAll(`tr[data-match-id="${mid}"]`).forEach((row) => {
+        row.classList.add("highlight-group");
+      });
+    });
+
+    chip.addEventListener("mouseleave", () => {
+      document.querySelectorAll(`tr[data-match-id="${mid}"]`).forEach((row) => {
+        row.classList.remove("highlight-group");
+      });
+    });
+  });
+}
+
+// --------------------------------------------------------------------------
+// 9. Review Queue (Candidates, Deterministic Features, Unverified AI Rationale)
+// --------------------------------------------------------------------------
+async function loadReviewQueue() {
+  const container = document.getElementById("review-cards-list");
+  const countBadge = document.getElementById("queue-count-badge");
+  const kpiPending = document.getElementById("kpi-queue-pending");
+
+  try {
+    const res = await fetch("/api/reconciliation/review-queue");
+    if (!res.ok) return;
+    const data = await res.json();
+    const items = data.items || [];
+
+    if (countBadge) {
+      countBadge.textContent = items.length;
+      countBadge.style.display = items.length > 0 ? "inline-block" : "none";
+    }
+
+    if (kpiPending) {
+      kpiPending.textContent = items.length;
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="solid-card glass-card" style="text-align: center; padding: 48px 24px;">
+          <div style="font-size: 2.2rem; margin-bottom: 12px; color: #34d399;">✓</div>
+          <div style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">
+            Review Queue Resolved
+          </div>
+          <div style="color: var(--text-secondary); max-width: 480px; margin: 0 auto; line-height: 1.6;">
+            All escalated and low-confidence items have been adjudicated. Authoritative balance proof variance currently reads 
+            <strong style="color: #34d399;">$0.00</strong>.
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    let cardsHtml = "";
+    items.forEach((item, index) => {
+      const target = item.target_item;
+      const proposed = item.proposed_candidate;
+      const candidates = item.candidates || [proposed];
+      const features = item.deterministic_features || {};
+      const matchId = item.match_id || "";
+      const reviewId = item.review_id || `ITEM-${index}`;
+
+      const deltaFormatted = features.amount_delta_formatted || "0.00";
+      const dateDrift = features.date_diff_days !== undefined ? `${features.date_diff_days} days` : "0 days";
+      const simRatio = features.similarity_pct !== undefined ? `${features.similarity_pct}%` : "0%";
+      const refMatchStr = features.reference_match ? "Matched ✓" : "No Ref Match";
+
+      // Build options for candidate reassign select
+      let candOptionsHtml = "";
+      candidates.forEach((c) => {
+        const isSelected = c.id === proposed.id ? "selected" : "";
+        candOptionsHtml += `<option value="${escapeHtml(c.id)}" ${isSelected}>${escapeHtml(c.id)} • $${escapeHtml(c.amount_formatted)} • ${escapeHtml(c.date)}</option>`;
+      });
+
+      cardsHtml += `
+        <div class="review-card" id="card-${escapeHtml(reviewId)}" data-target-id="${escapeHtml(target.id)}" data-candidate-id="${escapeHtml(proposed.id)}" data-match-id="${escapeHtml(matchId)}">
+          
+          <!-- Card Header -->
+          <div class="review-card-header">
+            <div class="review-header-left">
+              <span class="review-id-title">${escapeHtml(target.id)} ⇄ ${escapeHtml(proposed.id)}</span>
+              <span class="review-flag-badge">${escapeHtml(item.flag_reason || "Adjudication Required")}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.76rem; font-family: var(--font-mono); color: var(--text-muted);">CONFIDENCE:</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: #fbbf24;">${(item.confidence * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+
+          <!-- Comparison Grid -->
+          <div class="comparison-grid">
+            
+            <!-- Target Record -->
+            <div class="comparison-box target-box">
+              <div class="comparison-role-lbl" style="color: #60a5fa;">
+                <span>TARGET ITEM (${escapeHtml(target.side.toUpperCase())})</span>
+                <span style="font-family: var(--font-mono);">${escapeHtml(target.id)}</span>
+              </div>
+              <div class="comparison-amount">$${escapeHtml(target.amount_formatted)}</div>
+              <div class="comparison-desc">${escapeHtml(target.description)}</div>
+              <div class="comparison-meta">
+                <span>Date: <strong>${escapeHtml(target.date)}</strong></span>
+                <span>Ref: <strong>${escapeHtml(target.reference || 'None')}</strong></span>
+              </div>
+            </div>
+
+            <!-- Proposed Candidate -->
+            <div class="comparison-box candidate-box">
+              <div class="comparison-role-lbl" style="color: #34d399;">
+                <span>PROPOSED CANDIDATE (${escapeHtml(proposed.side.toUpperCase())})</span>
+                <span style="font-family: var(--font-mono);">${escapeHtml(proposed.id)}</span>
+              </div>
+              <div class="comparison-amount">$${escapeHtml(proposed.amount_formatted)}</div>
+              <div class="comparison-desc">${escapeHtml(proposed.description)}</div>
+              <div class="comparison-meta">
+                <span>Date: <strong>${escapeHtml(proposed.date)}</strong></span>
+                <span>Ref: <strong>${escapeHtml(proposed.reference || 'None')}</strong></span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Deterministic Features Box (Code-Computed) -->
+          <div class="deterministic-features-box">
+            <div class="features-box-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Deterministic Kernel Metrics (Rule 4 Code-Computed)</span>
+            </div>
+            <div class="features-grid">
+              <div class="feature-item">
+                <span class="feature-lbl">Amount Delta</span>
+                <span class="feature-val" style="color: ${features.is_exact_amount ? '#34d399' : '#fbbf24'};">$${escapeHtml(deltaFormatted)}</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-lbl">Date Drift</span>
+                <span class="feature-val">${escapeHtml(dateDrift)}</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-lbl">Descriptor Similarity</span>
+                <span class="feature-val">${escapeHtml(simRatio)}</span>
+              </div>
+              <div class="feature-item">
+                <span class="feature-lbl">Reference Match</span>
+                <span class="feature-val">${escapeHtml(refMatchStr)}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISUALLY DISTINCT: AI RATIONALE (UNVERIFIED) BLOCK -->
+          <div class="unverified-rationale-box">
+            <div class="unverified-header">
+              <div class="unverified-title-group">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="unverified-badge">AI rationale (unverified)</span>
+              </div>
+              <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 600;">Advisory LLM Output • Unverified by Code</span>
+            </div>
+            <div class="unverified-text">
+              "${escapeHtml(item.ai_rationale)}"
+            </div>
+            <div class="unverified-disclaimer">
+              Notice: The LLM rationale is strictly non-authoritative and has zero computational authority over financial balances. All authoritative values are computed by deterministic code using integer cents.
+            </div>
+          </div>
+
+          <!-- Actions & Persistence Bar -->
+          <div class="review-actions-bar">
+            <div class="review-inputs-group">
+              <input type="text" class="reviewer-note-input" id="note-${escapeHtml(reviewId)}" placeholder="Optional auditor justification..." />
+              <select class="reassign-select" id="select-cand-${escapeHtml(reviewId)}" title="Select alternative candidate for reassignment">
+                ${candOptionsHtml}
+              </select>
+            </div>
+
+            <div class="buttons-group">
+              <button class="btn-confirm-match" onclick="handleConfirmMatch('${escapeHtml(target.id)}', '${escapeHtml(proposed.id)}', '${escapeHtml(matchId)}', '${escapeHtml(reviewId)}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Confirm</span>
+              </button>
+
+              <button class="btn-reject-match" onclick="handleRejectMatch('${escapeHtml(matchId)}', '${escapeHtml(target.id)}', '${escapeHtml(reviewId)}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <span>Reject</span>
+              </button>
+
+              <button class="btn-reassign-match" onclick="handleReassignMatch('${escapeHtml(target.id)}', '${escapeHtml(matchId)}', '${escapeHtml(reviewId)}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 16V4m0 0L3 8m4-4 4 4m6 0v12m0 0 4-4m-4 4-4-4"/></svg>
+                <span>Reassign</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+    });
+
+    container.innerHTML = cardsHtml;
+
+  } catch (err) {
+    console.error("Failed to load review queue:", err);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 10. Confirm / Reject / Reassign Action Handlers
+// --------------------------------------------------------------------------
+window.handleConfirmMatch = async function(targetId, candidateId, matchId, reviewId) {
+  const noteInput = document.getElementById(`note-${reviewId}`);
+  const reviewerNote = noteInput ? noteInput.value.trim() : "";
+
+  try {
+    const res = await fetch("/api/reconciliation/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        target_id: targetId,
+        candidate_id: candidateId,
+        match_id: matchId || undefined,
+        reviewer_note: reviewerNote || undefined
+      })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      showNotification(`Match confirmed successfully! Persisted to SQLite matches & audit_logs.`, "success");
+      await Promise.all([
+        loadBalanceProof(),
+        loadReviewQueue(),
+        loadRecords(),
+        loadAuditLogs()
+      ]);
+    } else {
+      showNotification(data.error || "Confirmation failed", "error");
+    }
+  } catch (err) {
+    showNotification("Network error executing confirm action", "error");
   }
 };
 
-// --------------------------------------------------------------------------
-// 4. Setup Form & Action Listeners
-// --------------------------------------------------------------------------
-function setupEventListeners() {
-  const select = document.getElementById("scenario-select");
-  const queryInput = document.getElementById("query-input");
-  const btnRunAgent = document.getElementById("btn-run-agent");
-  const btnRunBenchmark = document.getElementById("btn-run-benchmark");
-  const btnRunErrorSuite = document.getElementById("btn-run-error-suite");
+window.handleRejectMatch = async function(matchId, targetId, reviewId) {
+  const noteInput = document.getElementById(`note-${reviewId}`);
+  const reviewerNote = noteInput ? noteInput.value.trim() : "";
 
-  select.addEventListener("change", () => {
-    const scId = select.value;
-    const dossier = document.getElementById("scenario-dossier");
-    const expText = document.getElementById("expected-seq-text");
-
-    if (!scId) {
-      queryInput.value = "";
-      if (dossier) dossier.style.display = "none";
-      return;
-    }
-
-    const sc = scenariosList.find((s) => s.scenario_id === scId);
-    if (sc) {
-      queryInput.value = sc.input_prompt;
-      
-      // Update Scenario Dossier
-      if (dossier) {
-        dossier.style.display = "block";
-        document.getElementById("dossier-id-title").textContent = `${sc.scenario_id}: ${sc.title}`;
-        document.getElementById("dossier-desc").textContent = sc.description;
-        
-        const hasRealloc = sc.expected_tool_sequence.includes("propose_reallocation");
-        const reallocBadge = document.getElementById("dossier-realloc-badge");
-        if (reallocBadge) {
-          reallocBadge.className = hasRealloc ? "tag-badge warning" : "tag-badge success";
-          reallocBadge.innerHTML = hasRealloc ? "⚡ Reallocates Budget" : "Audit Only";
-        }
-
-        const txn = sc.context?.transaction;
-        document.getElementById("dossier-merchant").textContent = txn?.merchant || (sc.context?.month ? `Monthly Ledger (${sc.context.month})` : "General Query");
-        document.getElementById("dossier-amount").textContent = (txn?.amount !== undefined) ? `$${txn.amount.toFixed(2)}` : "Multi-Transaction";
-        document.getElementById("dossier-month").textContent = sc.context?.month || "2026-08";
-        
-        const reqEl = document.getElementById("dossier-realloc-req");
-        if (reqEl) {
-          reqEl.innerHTML = hasRealloc 
-            ? '<span style="color: var(--accent-warning); font-weight: 600;">Yes (Tool 5)</span>' 
-            : '<span style="color: var(--text-secondary);">No</span>';
-        }
-      }
-
-      const seqStr = sc.expected_tool_sequence.length
-        ? sc.expected_tool_sequence.map(t => t.replace(/_/g, ' ')).join(" ➔ ")
-        : "None (Request Clarification)";
-      if (expText) expText.textContent = seqStr;
-    }
-  });
-
-  btnRunAgent.addEventListener("click", runReconciliation);
-  btnRunBenchmark.addEventListener("click", runBenchmark);
-  btnRunErrorSuite.addEventListener("click", runErrorSuite);
-}
-
-// --------------------------------------------------------------------------
-// 5. Load Scenarios from Backend
-// --------------------------------------------------------------------------
-async function loadScenarios() {
   try {
-    const res = await fetch("/api/scenarios");
-    const data = await res.json();
-    scenariosList = data.scenarios || [];
-
-    const select = document.getElementById("scenario-select");
-    select.innerHTML = '<option value="">-- Custom Manual Input --</option>';
-
-    // Group scenarios into OptGroups for clear taxonomy
-    const groupRealloc = document.createElement("optgroup");
-    groupRealloc.label = "⚡ Scenarios with Budget Reallocation (Tool 5)";
-
-    const groupStandard = document.createElement("optgroup");
-    groupStandard.label = "📋 Scenarios: Categorization, Anomaly & Rules";
-
-    const groupEdge = document.createElement("optgroup");
-    groupEdge.label = "❓ Edge Cases & Clarifications";
-
-    scenariosList.forEach((sc) => {
-      const opt = document.createElement("option");
-      opt.value = sc.scenario_id;
-      
-      const hasRealloc = sc.expected_tool_sequence.includes("propose_reallocation");
-      const isClarify = sc.expected_tool_sequence.length === 0;
-
-      if (hasRealloc) {
-        opt.textContent = `${sc.scenario_id}: ${sc.title} [⚡ Reallocation]`;
-        groupRealloc.appendChild(opt);
-      } else if (isClarify) {
-        opt.textContent = `${sc.scenario_id}: ${sc.title} [Clarification]`;
-        groupEdge.appendChild(opt);
-      } else {
-        opt.textContent = `${sc.scenario_id}: ${sc.title}`;
-        groupStandard.appendChild(opt);
-      }
+    const res = await fetch("/api/reconciliation/reject", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        match_id: matchId || undefined,
+        target_id: targetId || undefined,
+        reviewer_note: reviewerNote || undefined
+      })
     });
 
-    select.appendChild(groupRealloc);
-    select.appendChild(groupStandard);
-    select.appendChild(groupEdge);
-
-    if (scenariosList.length > 0) {
-      select.value = scenariosList[0].scenario_id;
-      select.dispatchEvent(new Event("change"));
+    const data = await res.json();
+    if (res.ok) {
+      showNotification(`Match rejected. Item returned to review queue with status 'pending_review'.`, "info");
+      await Promise.all([
+        loadBalanceProof(),
+        loadReviewQueue(),
+        loadRecords(),
+        loadAuditLogs()
+      ]);
+    } else {
+      showNotification(data.error || "Rejection failed", "error");
     }
   } catch (err) {
-    console.error("Failed to load scenarios:", err);
+    showNotification("Network error executing reject action", "error");
   }
-}
+};
 
-// --------------------------------------------------------------------------
-// 6. Run Reconciliation & Render Explainable Audit Trail
-// --------------------------------------------------------------------------
-async function runReconciliation() {
-  const select = document.getElementById("scenario-select");
-  const queryInput = document.getElementById("query-input");
-  const btn = document.getElementById("btn-run-agent");
-  const emptyState = document.getElementById("trace-empty");
-  const timeline = document.getElementById("trace-timeline");
-  const recCard = document.getElementById("trace-recommendation");
-  const recText = document.getElementById("recommendation-text");
-  const metaPill = document.getElementById("trace-meta-pill");
+window.handleReassignMatch = async function(targetId, matchId, reviewId) {
+  const selectEl = document.getElementById(`select-cand-${reviewId}`);
+  const noteInput = document.getElementById(`note-${reviewId}`);
+  const newCandidateId = selectEl ? selectEl.value : "";
+  const reviewerNote = noteInput ? noteInput.value.trim() : "";
 
-  const query = queryInput.value.trim();
-  if (!query) {
-    alert("Please enter a reconciliation query or choose a scenario.");
+  if (!newCandidateId) {
+    showNotification("Please select an alternative candidate to reassign", "error");
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span><span>Auditing Statement...</span>';
-  emptyState.style.display = "none";
-  timeline.style.display = "flex";
-  timeline.innerHTML = "";
-  recCard.style.display = "none";
-  metaPill.style.display = "none";
-
-  const reallocCard = document.getElementById("trace-reallocation-card");
-  if (reallocCard) reallocCard.style.display = "none";
-
   try {
-    const scId = select.value || null;
-    const res = await fetch("/api/run", {
+    const res = await fetch("/api/reconciliation/reassign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scenario_id: scId, query: query })
+      body: JSON.stringify({
+        target_id: targetId,
+        new_candidate_id: newCandidateId,
+        match_id: matchId || undefined,
+        reviewer_note: reviewerNote || undefined
+      })
     });
 
-    const trace = await res.json();
-
-    metaPill.textContent = `${trace.steps.length} Tool Calls • ${trace.total_duration_ms}ms`;
-    metaPill.style.display = "inline-flex";
-
-    if (trace.steps.length === 0) {
-      const notice = document.createElement("div");
-      notice.className = "audit-card";
-      notice.style.borderLeftColor = "var(--accent-warning)";
-      notice.innerHTML = `
-        <div class="audit-step-title">Evaluation: Clarification Requested</div>
-        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">
-          The agent evaluated the input and determined that essential transaction parameters (merchant or amount) were missing. Rather than guessing, it flagged an explicit uncertainty state.
-        </div>
-      `;
-      timeline.appendChild(notice);
+    const data = await res.json();
+    if (res.ok) {
+      showNotification(`Reassigned target ${targetId} to candidate ${newCandidateId}!`, "success");
+      await Promise.all([
+        loadBalanceProof(),
+        loadReviewQueue(),
+        loadRecords(),
+        loadAuditLogs()
+      ]);
     } else {
-      trace.steps.forEach((s) => {
-        const card = createExplainableStepCard(s);
-        timeline.appendChild(card);
-      });
+      showNotification(data.error || "Reassignment failed", "error");
     }
-
-    // Check if budget reallocation was proposed in this trace
-    const reallocStep = trace.steps.find((s) => s.tool_name === "propose_reallocation");
-    if (reallocStep && reallocCard) {
-      const out = reallocStep.tool_output || {};
-      const reallocs = out.reallocations || [];
-      const container = document.getElementById("realloc-transfers-container");
-      const statCovered = document.getElementById("realloc-stat-covered");
-      const statUncovered = document.getElementById("realloc-stat-uncovered");
-      const statusBadge = document.getElementById("realloc-status-badge");
-
-      statCovered.textContent = `$${(out.total_deficit_absorbed || 0).toFixed(2)}`;
-      statUncovered.textContent = `$${(out.remaining_uncovered_deficit || 0).toFixed(2)}`;
-
-      if (out.is_fully_covered) {
-        statusBadge.className = "tag-badge success";
-        statusBadge.textContent = "Fully Balanced";
-      } else {
-        statusBadge.className = "tag-badge warning";
-        statusBadge.textContent = "Protected Floor Enforced";
-      }
-
-      if (reallocs.length > 0) {
-        container.innerHTML = reallocs.map((r) => `
-          <div class="transfer-pill-row">
-            <div class="transfer-direction">
-              <span class="tag-badge" style="color: var(--text-muted); font-size: 10px;">SURPLUS POOL</span>
-              <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">${escapeHtml(r.from_category)}</span>
-              <span class="realloc-arrow">➔</span>
-              <span class="tag-badge danger" style="font-size: 10px;">DEFICIT COVERED</span>
-              <span style="font-weight: 600; color: var(--text-primary); font-size: 12.5px;">${escapeHtml(r.to_category)}</span>
-            </div>
-            <div class="realloc-amount">+$${r.amount.toFixed(2)}</div>
-          </div>
-        `).join("");
-      } else {
-        container.innerHTML = `
-          <div style="font-size: 12px; color: var(--text-secondary); padding: 8px; background: rgba(5, 12, 8, 0.7); border-radius: var(--radius-sm);">
-            No transfer needed or available: Deficits could not be drawn without breaching non-discretionary safety limits.
-          </div>
-        `;
-      }
-
-      reallocCard.style.display = "block";
-    }
-
-    recText.textContent = trace.final_recommendation;
-    recCard.style.display = "block";
   } catch (err) {
-    alert("Reconciliation failed: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">⚡</span><span>Audit & Reconcile Transaction</span>';
-  }
-}
-
-// --------------------------------------------------------------------------
-// 7. Format Individual Audit Step Cleanly (No Raw Dumps)
-// --------------------------------------------------------------------------
-function createExplainableStepCard(step) {
-  const card = document.createElement("div");
-  card.className = "audit-card";
-
-  const toolName = step.tool_name;
-  const out = step.tool_output || {};
-  let contentHtml = "";
-
-  if (toolName === "categorize_transaction") {
-    contentHtml = `
-      <div class="audit-metric-grid">
-        <div class="metric-item">
-          <span class="metric-item-label">Clean Merchant</span>
-          <span class="metric-item-value">${escapeHtml(out.clean_merchant || step.tool_arguments.merchant || "Unknown")}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Assigned Category</span>
-          <span class="metric-item-value"><span class="tag-badge success">${escapeHtml(out.category || "Unassigned")}</span></span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Confidence</span>
-          <span class="metric-item-value emerald-txt">${Math.round((out.confidence || 0) * 100)}%</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Ambiguity Flag</span>
-          <span class="metric-item-value">${out.is_ambiguous ? '<span class="tag-badge warning">Requires Review</span>' : '<span class="tag-badge success">Verified Match</span>'}</span>
-        </div>
-      </div>
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-        ${escapeHtml(out.explainable_reasoning || out.reasoning || "")}
-      </div>
-    `;
-  } else if (toolName === "flag_anomaly") {
-    const isAnom = out.is_anomaly;
-    contentHtml = `
-      <div class="audit-metric-grid">
-        <div class="metric-item">
-          <span class="metric-item-label">Risk Evaluation</span>
-          <span class="metric-item-value">
-            <span class="tag-badge ${isAnom ? 'danger' : 'success'}">${isAnom ? escapeHtml(out.anomaly_type || 'Anomaly') : 'Standard Spending'}</span>
-          </span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Severity</span>
-          <span class="metric-item-value">${escapeHtml(out.severity || "NONE")}</span>
-        </div>
-      </div>
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-        ${escapeHtml(out.explanation || "")}
-      </div>
-    `;
-  } else if (toolName === "check_against_budget_rule") {
-    const status = out.status || "OK";
-    const statusClass = status === "EXCEEDED" ? "danger" : (status === "WARNING" ? "warning" : "success");
-    contentHtml = `
-      <div class="audit-metric-grid">
-        <div class="metric-item">
-          <span class="metric-item-label">Category Limit</span>
-          <span class="metric-item-value">$${(out.budget_limit || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Actual Spent</span>
-          <span class="metric-item-value">$${(out.total_spend || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Utilization</span>
-          <span class="metric-item-value">${out.utilization_pct || 0}%</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Headroom</span>
-          <span class="metric-item-value">$${(out.remaining_budget || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Budget Status</span>
-          <span class="metric-item-value"><span class="tag-badge ${statusClass}">${status}</span></span>
-        </div>
-      </div>
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-        ${escapeHtml(out.explainable_summary || out.message || "")}
-      </div>
-    `;
-  } else if (toolName === "calculate_category_variance") {
-    contentHtml = `
-      <div class="audit-metric-grid">
-        <div class="metric-item">
-          <span class="metric-item-label">Net Variance</span>
-          <span class="metric-item-value">$${(out.net_variance || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Total Deficits</span>
-          <span class="metric-item-value rose-txt">-$${(out.total_deficits || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Total Surpluses</span>
-          <span class="metric-item-value emerald-txt">+$${(out.total_surpluses || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Over-Budget Envelopes</span>
-          <span class="metric-item-value">${(out.deficit_categories || []).join(", ") || "None"}</span>
-        </div>
-      </div>
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-        ${escapeHtml(out.explainable_summary || out.summary || "")}
-      </div>
-    `;
-  } else if (toolName === "propose_reallocation") {
-    const reallocs = out.reallocations || [];
-    let reallocTable = "";
-    if (reallocs.length > 0) {
-      reallocTable = `
-        <div style="margin-top: 10px;">
-          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 4px;">Proposed Fund Movements</div>
-          ${reallocs.map(r => `
-            <div style="font-size: 12px; color: var(--text-primary); margin-bottom: 3px; font-family: var(--font-mono);">
-              • Move <strong>$${r.amount.toFixed(2)}</strong> from <span class="tag-badge">${r.from_category}</span> → <span class="tag-badge danger">${r.to_category}</span>
-            </div>
-          `).join("")}
-        </div>
-      `;
-    }
-
-    contentHtml = `
-      <div class="audit-metric-grid">
-        <div class="metric-item">
-          <span class="metric-item-label">Deficit Absorbed</span>
-          <span class="metric-item-value emerald-txt">$${(out.total_deficit_absorbed || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Uncovered Deficit</span>
-          <span class="metric-item-value">$${(out.remaining_uncovered_deficit || 0).toFixed(2)}</span>
-        </div>
-        <div class="metric-item">
-          <span class="metric-item-label">Resolution Status</span>
-          <span class="metric-item-value">${out.is_fully_covered ? '<span class="tag-badge success">Fully Balanced</span>' : '<span class="tag-badge warning">Protected Floor Enforced</span>'}</span>
-        </div>
-      </div>
-      ${reallocTable}
-      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-        ${escapeHtml(out.recommendation_summary || "")}
-      </div>
-    `;
-  }
-
-  // Collapsible drawer for raw payload inspection
-  const stepId = `payload-step-${step.step_index}-${Date.now()}`;
-  card.innerHTML = `
-    <div class="audit-step-title-row">
-      <div class="audit-step-title">${toolName.replace(/_/g, ' ').toUpperCase()}</div>
-      <div class="audit-step-number">STEP ${step.step_index} • ${step.duration_ms}ms</div>
-    </div>
-    <div class="audit-reasoning-text">
-      <strong style="color: var(--text-primary);">Rationale:</strong> ${escapeHtml(step.thought)}
-    </div>
-    ${contentHtml}
-    <div class="payload-toggle" onclick="togglePayload('${stepId}')">[+ Inspect Raw Tool Arguments & Output]</div>
-    <div id="${stepId}" class="payload-drawer">
-      <strong>Arguments:</strong>
-      <pre>${escapeHtml(JSON.stringify(step.tool_arguments, null, 2))}</pre>
-      <strong style="margin-top: 6px; display: block;">Raw Output:</strong>
-      <pre>${escapeHtml(JSON.stringify(step.tool_output, null, 2))}</pre>
-    </div>
-  `;
-
-  return card;
-}
-
-window.togglePayload = function(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.style.display = el.style.display === "block" ? "none" : "block";
+    showNotification("Network error executing reassign action", "error");
   }
 };
 
 // --------------------------------------------------------------------------
-// 8. Run Pipeline Verification Suite
+// 11. Audit Trail Feed (SQLite audit_logs)
 // --------------------------------------------------------------------------
-async function runBenchmark() {
-  const btn = document.getElementById("btn-run-benchmark");
-  const tableBody = document.getElementById("eval-table-body");
-  const latencyMetric = document.getElementById("metric-avg-latency");
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span><span>Executing 18 Scenarios...</span>';
-  tableBody.innerHTML = `
-    <tr>
-      <td colspan="7" class="empty-table-cell">
-        Running deterministic ReAct reasoning across 18 banking profiles...
-      </td>
-    </tr>
-  `;
+async function loadAuditLogs() {
+  const tbody = document.getElementById("audit-table-body");
+  if (!tbody) return;
 
   try {
-    const res = await fetch("/api/eval", { method: "POST" });
+    const res = await fetch("/api/reconciliation/audit-logs?limit=50");
+    if (!res.ok) return;
     const data = await res.json();
+    const logs = data.audit_logs || [];
 
-    if (latencyMetric) {
-      latencyMetric.textContent = `${data.mean_latency_ms || 2.4}ms`;
+    if (logs.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No audit logs recorded yet.</td></tr>`;
+      return;
     }
 
-    tableBody.innerHTML = "";
-    const list = data.scenario_results || data.results || [];
-    list.forEach((r) => {
-      const tr = document.createElement("tr");
-      const seq = r.actual_sequence || r.executed_tool_sequence || [];
-      const hasRealloc = seq.includes("propose_reallocation");
-      let actionTag = '<span class="tag-badge success">Audit Complete</span>';
-      if (hasRealloc) {
-        actionTag = '<span class="tag-badge warning">⚡ Reallocated</span>';
-      } else if (seq.length === 0) {
-        actionTag = '<span class="tag-badge">Clarification</span>';
-      }
+    let html = "";
+    logs.forEach((log) => {
+      let argsPreview = log.arguments_json || "";
+      if (argsPreview.length > 60) argsPreview = argsPreview.substring(0, 60) + "...";
 
-      const ms = r.execution_ms || r.duration_ms || Math.floor(Math.random() * 3 + 2);
-      tr.innerHTML = `
-        <td><code style="font-family: var(--font-mono); color: var(--accent-primary-light);">${r.scenario_id}</code></td>
-        <td style="font-weight: 600; color: var(--text-primary);">${escapeHtml(r.title)}</td>
-        <td style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.input_prompt)}">
-          ${escapeHtml(r.input_prompt)}
-        </td>
-        <td style="font-family: var(--font-mono); font-size: 11px;">
-          ${seq.map(t => `<span class="tag-badge">${t.replace(/_/g, ' ')}</span>`).join(" ")}
-        </td>
-        <td style="font-family: var(--font-mono);">${ms}ms</td>
-        <td>${actionTag}</td>
-        <td><span class="tag-badge success">Verified</span></td>
+      html += `
+        <tr>
+          <td><span style="font-family: var(--font-mono); color: var(--text-muted);">#${log.id}</span></td>
+          <td><span style="font-family: var(--font-mono); font-size: 0.76rem;">${escapeHtml(log.timestamp)}</span></td>
+          <td><strong style="font-family: var(--font-mono); color: var(--accent-primary-light);">${escapeHtml(log.run_id)}</strong></td>
+          <td><span class="tag-badge ${log.tool_name.includes('confirm') ? 'success' : (log.tool_name.includes('reject') ? 'rose' : '')}">${escapeHtml(log.tool_name)}</span></td>
+          <td><span style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(log.provider || 'deterministic')}</span></td>
+          <td><span style="font-family: var(--font-mono); font-size: 0.74rem;">${escapeHtml(log.model || 'none')}</span></td>
+          <td><span style="font-family: var(--font-mono);">${log.duration_ms !== undefined ? log.duration_ms.toFixed(1) : '0.0'}ms</span></td>
+          <td><span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); cursor: pointer;" title="${escapeHtml(log.arguments_json)}">${escapeHtml(argsPreview)}</span></td>
+        </tr>
       `;
-      tableBody.appendChild(tr);
     });
+
+    tbody.innerHTML = html;
+
   } catch (err) {
-    alert("Evaluation failed: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">▶</span><span>Execute Verification Suite</span>';
+    console.error("Failed to load audit logs:", err);
   }
 }
 
 // --------------------------------------------------------------------------
-// 9. Run Error Propagation & Failure-Mode Analysis
-// --------------------------------------------------------------------------
-async function runErrorSuite() {
-  const btn = document.getElementById("btn-run-error-suite");
-  const tableBody = document.getElementById("error-table-body");
-  const kpiProp = document.getElementById("kpi-prop-rate");
-  const kpiDrift = document.getElementById("kpi-dollar-drift");
-  const kpiRec = document.getElementById("kpi-rec-corrupt");
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span><span>Injecting Faults...</span>';
-  tableBody.innerHTML = `
-    <tr>
-      <td colspan="7" class="empty-table-cell">
-        Injecting Step 1 miscategorizations across paired scenarios...
-      </td>
-    </tr>
-  `;
-
-  try {
-    const res = await fetch("/api/error-analysis", { method: "POST" });
-    const data = await res.json();
-
-    if (kpiProp) kpiProp.textContent = `${Math.round((data.overall_error_propagation_rate || 1.0) * 100)}%`;
-    if (kpiDrift) kpiDrift.textContent = `$${(data.total_dollar_drift || 6353.08).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-    if (kpiRec) kpiRec.textContent = `${Math.round((data.recommendation_corruption_rate || 0.727) * 100)}%`;
-
-    tableBody.innerHTML = "";
-    (data.scenario_breakdown || []).forEach((s) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><code style="font-family: var(--font-mono); color: var(--accent-primary-light);">${s.scenario_id}</code></td>
-        <td><span class="tag-badge success">${s.original_category}</span></td>
-        <td><span class="tag-badge danger">${s.injected_corrupted_category}</span></td>
-        <td style="font-family: var(--font-mono); font-weight: 600;">$${s.transaction_amount.toFixed(2)}</td>
-        <td style="color: var(--accent-danger); font-weight: 700; font-family: var(--font-mono);">+$${s.dollar_drift.toFixed(2)}</td>
-        <td style="font-family: var(--font-mono);">${s.corrupted_steps_count} / ${s.downstream_steps_evaluated} (${Math.round(s.scenario_propagation_rate * 100)}%)</td>
-        <td>${s.final_recommendation_corrupted ? '<span class="tag-badge danger">Corrupted</span>' : '<span class="tag-badge success">Resilient</span>'}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
-  } catch (err) {
-    alert("Error analysis failed: " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">⚡</span><span>Execute Perturbation Test</span>';
-  }
-}
-
-// --------------------------------------------------------------------------
-// 10. Load SQLite Banking Ledger
-// --------------------------------------------------------------------------
-async function loadLedger() {
-  try {
-    const res = await fetch("/api/transactions");
-    const data = await res.json();
-    const tableBody = document.getElementById("ledger-table-body");
-    tableBody.innerHTML = "";
-
-    (data.transactions || []).forEach((t) => {
-      const isAnom = t.is_anomaly;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><code style="font-family: var(--font-mono); color: var(--accent-primary-light);">${t.id || t.transaction_id}</code></td>
-        <td style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 11.5px;">${t.date.split("T")[0]}</td>
-        <td><span style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-primary);">${escapeHtml(t.raw_descriptor || t.merchant)}</span></td>
-        <td style="font-weight: 500;">${escapeHtml(t.clean_merchant || t.merchant)}</td>
-        <td><span class="tag-badge">${t.category}</span></td>
-        <td style="font-weight: 600; font-family: var(--font-mono); color: var(--text-primary);">$${t.amount.toFixed(2)}</td>
-        <td>${isAnom ? '<span class="tag-badge danger">Anomaly</span>' : '<span class="tag-badge success">Posted</span>'}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
-  } catch (err) {
-    console.error("Failed to load ledger:", err);
-  }
-}
-
-// --------------------------------------------------------------------------
-// 11. Load Tool Definitions
+// 12. 7-Tool Registry
 // --------------------------------------------------------------------------
 async function loadTools() {
+  const grid = document.getElementById("tools-grid");
+  if (!grid) return;
+
   try {
-    const res = await fetch("/api/tools");
+    const res = await fetch("/api/reconciliation/tools");
+    if (!res.ok) return;
     const data = await res.json();
-    toolsList = data.tools || [];
+    const tools = data.tools || [];
 
-    const container = document.getElementById("tools-grid");
-    container.innerHTML = "";
+    let html = "";
+    tools.forEach((t) => {
+      const isLLM = t.is_llm_callable;
+      let paramsList = "";
+      (t.parameters || []).forEach((p) => {
+        paramsList += `
+          <div style="font-size: 0.74rem; font-family: var(--font-mono); margin-bottom: 4px;">
+            <strong style="color: var(--accent-primary-light);">${escapeHtml(p.name)}</strong>: 
+            <span style="color: var(--text-muted);">${escapeHtml(p.type)}</span> 
+            ${p.required ? '<span style="color: var(--accent-warning); font-size: 0.68rem;">[req]</span>' : ''}
+          </div>
+        `;
+      });
 
-    toolsList.forEach((t) => {
-      const card = document.createElement("div");
-      card.className = "solid-card glass-card";
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div style="font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; color: var(--accent-primary-light);">${t.name}</div>
-          <span class="tag-badge success">PRD Section 3 Lock</span>
-        </div>
-        <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px;">${t.description}</div>
-        <div class="payload-toggle" onclick="togglePayload('tool-${t.name}')">[+ Inspect Schema Parameters]</div>
-        <div id="tool-${t.name}" class="payload-drawer">
-          <pre>${escapeHtml(JSON.stringify(t.parameters, null, 2))}</pre>
+      html += `
+        <div class="tool-card glass-card">
+          <div class="tool-card-header">
+            <span class="tool-name">${escapeHtml(t.name)}</span>
+            <span class="tag-badge ${isLLM ? 'warning' : 'success'}">${escapeHtml(t.category)}</span>
+          </div>
+          <p class="tool-desc">${escapeHtml(t.description)}</p>
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-glass);">
+            <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">Parameters:</div>
+            ${paramsList}
+          </div>
+          <div style="margin-top: 10px; font-size: 0.7rem; color: ${isLLM ? '#fbbf24' : '#34d399'};">
+            ${isLLM ? '• Exposed to LLM (isolated inquiry scope)' : '• Deterministic Kernel only (LLM cannot call)'}
+          </div>
         </div>
       `;
-      container.appendChild(card);
     });
+
+    grid.innerHTML = html;
+
   } catch (err) {
     console.error("Failed to load tools:", err);
   }
 }
 
-function escapeHtml(text) {
-  if (typeof text !== "string") return text;
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+// --------------------------------------------------------------------------
+// 13. Visual Notifications / Toast
+// --------------------------------------------------------------------------
+function showNotification(msg, type = "info") {
+  const existing = document.getElementById("app-notification-toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "app-notification-toast";
+  toast.style.position = "fixed";
+  toast.style.bottom = "24px";
+  toast.style.right = "24px";
+  toast.style.zIndex = "9999";
+  toast.style.padding = "12px 20px";
+  toast.style.borderRadius = "8px";
+  toast.style.fontFamily = "var(--font-sans)";
+  toast.style.fontSize = "0.85rem";
+  toast.style.fontWeight = "600";
+  toast.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)";
+  toast.style.display = "flex";
+  toast.style.alignItems = "center";
+  toast.style.gap = "10px";
+  toast.style.transition = "all 0.3s ease";
+
+  if (type === "success") {
+    toast.style.background = "#064e3b";
+    toast.style.border = "1px solid #10b981";
+    toast.style.color = "#a7f3d0";
+  } else if (type === "error") {
+    toast.style.background = "#881337";
+    toast.style.border = "1px solid #f43f5e";
+    toast.style.color = "#fecdd3";
+  } else {
+    toast.style.background = "#1e293b";
+    toast.style.border = "1px solid #64748b";
+    toast.style.color = "#cbd5e1";
+  }
+
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => toast.remove(), 350);
+  }, 4000);
 }
