@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 
 # Add project root to sys.path
-PROJECT_ROOT = Path(__file__).parent.resolve()
+PROJECT_ROOT = Path(__file__).parent.absolute()
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from agent.orchestrator import FinancialReconciliationAgent
@@ -100,6 +100,85 @@ def cmd_serve(args):
     port = args.port or 8080
     run_server(port=port)
 
+def cmd_gen_benchmark(args):
+    from evaluation.dataset_generator import generate_benchmark
+    seed = args.seed if args.seed is not None else 42
+    out_dir = Path(args.output_dir) if args.output_dir else None
+
+    print("\n" + "=" * 76)
+    print(f"GENERATING SEEDED TWO-SIDED RECONCILIATION BENCHMARK (SEED: {seed})")
+    print("=" * 76)
+
+    dev_path, test_path, sha_path = generate_benchmark(seed=seed, output_dir=out_dir)
+
+    with open(dev_path, "r", encoding="utf-8") as f:
+        dev_data = json.load(f)
+    with open(test_path, "r", encoding="utf-8") as f:
+        test_data = json.load(f)
+    with open(sha_path, "r", encoding="utf-8") as f:
+        sha256 = f.read().strip()
+
+    print(f"Generated dev split:  {dev_path} ({len(dev_data['ground_truth'])} groups)")
+    print(f"Generated test split: {test_path} ({len(test_data['ground_truth'])} groups)")
+    print(f"Test SHA-256:         {sha256}")
+    print("\nSlice Counts Breakdown (Stratified 50/50):")
+    print("-" * 76)
+    print(f"{'Slice Name':<25} | {'Dev Count':<10} | {'Test Count':<10} | {'Total':<8} | {'Share':<6}")
+    print("-" * 76)
+    dev_slices = dev_data["metadata"]["slice_counts"]
+    test_slices = test_data["metadata"]["slice_counts"]
+    all_slices = sorted(set(list(dev_slices.keys()) + list(test_slices.keys())))
+    total_all = len(dev_data['ground_truth']) + len(test_data['ground_truth'])
+    for s in all_slices:
+        d_cnt = dev_slices.get(s, 0)
+        t_cnt = test_slices.get(s, 0)
+        tot = d_cnt + t_cnt
+        pct = (tot / total_all) * 100
+        print(f"{s:<25} | {d_cnt:<10} | {t_cnt:<10} | {tot:<8} | {pct:>5.1f}%")
+    print("-" * 76)
+    print(f"{'TOTAL':<25} | {len(dev_data['ground_truth']):<10} | {len(test_data['ground_truth']):<10} | {total_all:<8} | 100.0%")
+    print("=" * 76)
+
+def cmd_tune(args):
+    from reconcile.tune import tune_b1_on_dev, tune_b2_on_dev
+    target = (args.baseline or "all").lower()
+    if target in ("b1", "all"):
+        tune_b1_on_dev()
+    if target in ("b2", "all"):
+        tune_b2_on_dev()
+
+def cmd_benchmark(args):
+    split = (args.split or "test").lower().strip()
+
+    if args.systems:
+        systems = [s.strip().upper() for s in args.systems.split(",") if s.strip()]
+    elif args.system:
+        systems = [args.system.strip().upper()]
+    else:
+        systems = ["B0", "B1", "B2", "B3", "B4"]
+
+    repeats = args.repeats if args.repeats is not None else 5
+
+    from evaluation.benchmark_runner import BenchmarkRunner
+    runner = BenchmarkRunner(
+        split=split,
+        systems=systems,
+        repeats=repeats,
+        project_root=PROJECT_ROOT
+    )
+    bundle = runner.run_benchmark()
+
+    # Print report
+    md_content = runner.generate_markdown_report(bundle)
+    print("\n" + md_content)
+
+    if args.output:
+        out_p = Path(args.output)
+        with open(out_p, "w", encoding="utf-8") as f:
+            json.dump(bundle, f, indent=2)
+        print(f"Saved benchmark results to {out_p}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Autonomous Financial Reconciliation Agent - CLI & Evaluation Benchmark"
@@ -123,6 +202,23 @@ def main():
     p_serve = subparsers.add_parser("serve", help="Launch interactive web UI dashboard")
     p_serve.add_argument("--port", "-p", type=int, default=8080, help="Port to listen on (default: 8080)")
 
+    # gen-benchmark
+    p_gen = subparsers.add_parser("gen-benchmark", help="Generate seeded two-sided reconciliation benchmark datasets")
+    p_gen.add_argument("--seed", type=int, default=42, help="Deterministic random seed (default: 42)")
+    p_gen.add_argument("--output-dir", help="Target output directory (default: data/benchmark)")
+
+    # tune
+    p_tune = subparsers.add_parser("tune", help="Tune baseline hyperparameter thresholds on dev split only")
+    p_tune.add_argument("--baseline", choices=["b1", "b2", "all"], default="all", help="Baseline to tune on dev (default: all)")
+
+    # benchmark
+    p_bm = subparsers.add_parser("benchmark", help="Run two-sided reconciliation benchmark evaluation")
+    p_bm.add_argument("--split", choices=["dev", "test"], default="test", help="Dataset split to evaluate (default: test)")
+    p_bm.add_argument("--systems", help="Comma-separated reconciliation systems to evaluate (e.g. B0,B1,B2,B3,B4)")
+    p_bm.add_argument("--system", help="Single system alias (for backward compatibility)")
+    p_bm.add_argument("--repeats", type=int, default=5, help="Number of repeat benchmark iterations (default: 5)")
+    p_bm.add_argument("--output", "-o", help="Optional path to save JSON results")
+
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -136,6 +232,12 @@ def main():
         cmd_error_analysis(args)
     elif args.command == "serve":
         cmd_serve(args)
+    elif args.command == "gen-benchmark":
+        cmd_gen_benchmark(args)
+    elif args.command == "tune":
+        cmd_tune(args)
+    elif args.command == "benchmark":
+        cmd_benchmark(args)
 
 if __name__ == "__main__":
     main()

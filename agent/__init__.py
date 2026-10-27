@@ -2,7 +2,7 @@
 
 from agent.orchestrator import FinancialReconciliationAgent
 from agent.trace import ReasoningTrace, TraceStep
-from agent.providers.deterministic_provider import DeterministicAgentProvider
+from agent.providers.deterministic_provider import DeterministicAgentProvider, DeterministicTestFixtureProvider
 from agent.providers.gemini_provider import GeminiAgentProvider
 from agent.providers.corrupted_provider import CorruptedAgentProvider
 
@@ -11,6 +11,7 @@ __all__ = [
     "ReasoningTrace",
     "TraceStep",
     "DeterministicAgentProvider",
+    "DeterministicTestFixtureProvider",
     "GeminiAgentProvider",
     "CorruptedAgentProvider"
 ]

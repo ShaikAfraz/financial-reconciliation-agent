@@ -1,7 +1,8 @@
 """
-Deterministic / ReAct Planning Provider for the Autonomous Financial Reconciliation Agent.
-Provides zero-setup, zero-cost, fully reproducible local tool-calling reasoning
-for the 18 ground-truth benchmark scenarios and ad-hoc financial queries.
+Deterministic Test Fixture Provider for Autonomous Financial Reconciliation.
+Provides zero-setup, zero-cost, fully reproducible local rule-based execution
+for testing and verification.
+EXPLICIT NOTE: This provider is a deterministic rule-based test fixture, NOT an AI model.
 """
 
 import re
@@ -9,11 +10,14 @@ from typing import Dict, Any, List
 from agent.providers.base import BaseAgentProvider
 from agent.trace import TraceStep
 
-class DeterministicAgentProvider(BaseAgentProvider):
+class DeterministicTestFixtureProvider(BaseAgentProvider):
     """
-    Intelligent ReAct planner that reasons through multi-step financial reconciliation
-    by analyzing the user's intent, context, and accumulated observations.
+    Rule-based test fixture provider for testing and validation.
+    Explicitly NOT an AI model.
     """
+    is_ai: bool = False
+    provider_name: str = "deterministic_test_fixture"
+    model_name: str = "rule_based_fixture"
 
     def plan_step(
         self,
@@ -262,3 +266,7 @@ class DeterministicAgentProvider(BaseAgentProvider):
             "final_recommendation": "\n".join(rec_lines),
             "grounded_facts": facts
         }
+
+# Alias for backward compatibility in existing test suites
+DeterministicAgentProvider = DeterministicTestFixtureProvider
+

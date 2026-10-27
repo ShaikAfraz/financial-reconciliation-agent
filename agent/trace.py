@@ -43,6 +43,7 @@ class ReasoningTrace:
         self.steps: List[TraceStep] = []
         self.final_recommendation: str = ""
         self.grounded_facts: List[str] = []
+        self.verification: str = "none"
         self.is_complete: bool = False
         self.error: Optional[str] = None
         self.total_duration_ms: float = 0.0
@@ -67,9 +68,15 @@ class ReasoningTrace:
         self.steps.append(step)
         return step
 
-    def complete(self, final_recommendation: str, grounded_facts: Optional[List[str]] = None):
+    def complete(
+        self,
+        final_recommendation: str,
+        grounded_facts: Optional[List[str]] = None,
+        verification: str = "none"
+    ):
         self.final_recommendation = final_recommendation
         self.grounded_facts = grounded_facts or []
+        self.verification = verification
         self.is_complete = True
         self.total_duration_ms = (time.time() - self._start_time) * 1000.0
 
@@ -86,6 +93,7 @@ class ReasoningTrace:
             "steps": [s.to_dict() for s in self.steps],
             "final_recommendation": self.final_recommendation,
             "grounded_facts": self.grounded_facts,
+            "verification": self.verification,
             "is_complete": self.is_complete,
             "error": self.error,
             "total_duration_ms": round(self.total_duration_ms, 2)

@@ -3,3 +3,5 @@
 # Optional dependencies for live Google Gemini API client or rich formatting:
 google-genai>=1.0.0
 pytest>=7.0.0
+rapidfuzz>=3.0.0
+pydantic>=2.0.0
