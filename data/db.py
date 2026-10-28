@@ -7,11 +7,12 @@ budget limits, and immutable audit logs.
 import os
 import sqlite3
 import csv
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 DATA_DIR = Path(__file__).parent.resolve()
-APP_DB_PATH = DATA_DIR / "reconciliation.db"
+APP_DB_PATH = Path(os.environ.get("RECONCILIATION_DB_PATH", str(DATA_DIR / "reconciliation.db")))
 BENCH_DB_PATH = Path(os.environ.get("BENCH_DB_PATH", str(DATA_DIR / "benchmark.db")))
 DB_PATH = APP_DB_PATH
 
@@ -28,141 +29,61 @@ def use_app_db() -> None:
 def use_benchmark_db() -> None:
     set_active_db(BENCH_DB_PATH)
 
+from data.migrations import configure_pragmas, run_migrations
+
 def get_connection(db_path: Optional[Path] = None) -> sqlite3.Connection:
     target = db_path or DB_PATH
     conn = sqlite3.connect(str(target))
     conn.row_factory = sqlite3.Row
+    configure_pragmas(conn)
     return conn
 
 def init_database(db_path: Optional[Path] = None):
-    """Initializes SQLite schema and seeds realistic Kaggle-style banking transactions."""
+    """Initializes SQLite schema using forward-only migrations and seeds baseline rules."""
+    target_path = Path(db_path) if db_path is not None else DB_PATH
+    # Preserve an existing application database before applying any pending migration.
+    # Temporary/test databases do not live at APP_DB_PATH and are left in place.
+    if target_path.exists():
+        probe = sqlite3.connect(str(target_path))
+        try:
+            exists = probe.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_migrations'").fetchone()
+            applied = {r[0] for r in probe.execute("SELECT version FROM schema_migrations")} if exists else set()
+            from data.migrations import MIGRATIONS
+            if any(version not in applied for version, _name, _fn in MIGRATIONS):
+                backup_dir = target_path.parent / "backup"
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+                backup_conn = sqlite3.connect(str(backup_dir / f"{target_path.stem}_{stamp}{target_path.suffix}"))
+                try:
+                    probe.backup(backup_conn)
+                finally:
+                    backup_conn.close()
+        finally:
+            probe.close()
     conn = get_connection(db_path)
+    run_migrations(conn)
+
     cursor = conn.cursor()
+    # Seed budget rules if empty
+    cursor.execute("SELECT COUNT(*) FROM budget_rules")
+    if cursor.fetchone()[0] == 0:
+        budget_rules_data = [
+            ("Housing", 1800.0, "non_discretionary", 0.0, "Rent/Mortgage. Protected from cuts."),
+            ("Utilities", 250.0, "non_discretionary", 0.1, "Electricity, gas, internet, water."),
+            ("Healthcare", 150.0, "non_discretionary", 0.1, "Prescriptions, clinical copays."),
+            ("Groceries", 550.0, "semi_discretionary", 0.3, "Supermarket & pantry food staples."),
+            ("Transport", 200.0, "semi_discretionary", 0.4, "Subway transit, fuel, rideshare."),
+            ("Shopping", 300.0, "discretionary", 0.8, "Retail apparel, electronics, goods."),
+            ("Dining", 400.0, "discretionary", 0.9, "Restaurants, cafes, takeout."),
+            ("Entertainment", 150.0, "discretionary", 1.0, "Streaming, movies, gaming, events.")
+        ]
 
-    cursor.executescript("""
-    CREATE TABLE IF NOT EXISTS budget_rules (
-        category TEXT PRIMARY KEY,
-        monthly_limit REAL NOT NULL,
-        category_type TEXT NOT NULL,
-        flexibility_weight REAL NOT NULL,
-        description TEXT
-    );
+        cursor.executemany("""
+        INSERT OR REPLACE INTO budget_rules (category, monthly_limit, category_type, flexibility_weight, description)
+        VALUES (?, ?, ?, ?, ?)
+        """, budget_rules_data)
+        conn.commit()
 
-    CREATE TABLE IF NOT EXISTS transactions (
-        id TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        raw_descriptor TEXT NOT NULL,
-        clean_merchant TEXT NOT NULL,
-        category TEXT NOT NULL,
-        amount REAL NOT NULL,
-        account_name TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'posted',
-        is_anomaly INTEGER NOT NULL DEFAULT 0,
-        anomaly_type TEXT,
-        anomaly_details TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS audit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        run_id TEXT NOT NULL,
-        step_index INTEGER NOT NULL,
-        tool_name TEXT NOT NULL,
-        arguments_json TEXT,
-        output_json TEXT,
-        duration_ms REAL,
-        provider TEXT,
-        model TEXT,
-        tokens INTEGER DEFAULT 0
-    );
-
-    -- Two-sided Bank-vs-Ledger Reconciliation Schema (Integer Cents only)
-    CREATE TABLE IF NOT EXISTS bank_records (
-        id TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        amount_cents INTEGER NOT NULL,
-        description TEXT NOT NULL,
-        reference TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS ledger_records (
-        id TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        amount_cents INTEGER NOT NULL,
-        description TEXT NOT NULL,
-        reference TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS matches (
-        match_id TEXT PRIMARY KEY,
-        status TEXT NOT NULL,
-        method TEXT NOT NULL,
-        confidence REAL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS match_members (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id TEXT NOT NULL,
-        side TEXT NOT NULL,
-        record_id TEXT NOT NULL,
-        UNIQUE (match_id, side, record_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS exceptions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        record_id TEXT NOT NULL,
-        side TEXT NOT NULL,
-        type TEXT NOT NULL,
-        status TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        match_id TEXT NOT NULL,
-        decision TEXT NOT NULL,
-        reviewer_note TEXT,
-        ts TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_txns_date_cat ON transactions(date, category);
-    CREATE INDEX IF NOT EXISTS idx_bank_records_date ON bank_records(date);
-    CREATE INDEX IF NOT EXISTS idx_ledger_records_date ON ledger_records(date);
-    CREATE INDEX IF NOT EXISTS idx_bank_records_amt ON bank_records(amount_cents);
-    CREATE INDEX IF NOT EXISTS idx_ledger_records_amt ON ledger_records(amount_cents);
-    CREATE INDEX IF NOT EXISTS idx_match_members_match ON match_members(match_id);
-    CREATE INDEX IF NOT EXISTS idx_exceptions_record ON exceptions(record_id, side);
-    CREATE INDEX IF NOT EXISTS idx_audit_logs_run ON audit_logs(run_id);
-    """)
-
-    # Check and migrate audit_logs columns if needed
-    cursor.execute("PRAGMA table_info(audit_logs)")
-    existing_audit_cols = {row["name"] for row in cursor.fetchall()}
-    if "provider" not in existing_audit_cols:
-        cursor.execute("ALTER TABLE audit_logs ADD COLUMN provider TEXT")
-    if "model" not in existing_audit_cols:
-        cursor.execute("ALTER TABLE audit_logs ADD COLUMN model TEXT")
-    if "tokens" not in existing_audit_cols:
-        cursor.execute("ALTER TABLE audit_logs ADD COLUMN tokens INTEGER DEFAULT 0")
-
-    # Seed budget rules
-    budget_rules_data = [
-        ("Housing", 1800.0, "non_discretionary", 0.0, "Rent/Mortgage. Protected from cuts."),
-        ("Utilities", 250.0, "non_discretionary", 0.1, "Electricity, gas, internet, water."),
-        ("Healthcare", 150.0, "non_discretionary", 0.1, "Prescriptions, clinical copays."),
-        ("Groceries", 550.0, "semi_discretionary", 0.3, "Supermarket & pantry food staples."),
-        ("Transport", 200.0, "semi_discretionary", 0.4, "Subway transit, fuel, rideshare."),
-        ("Shopping", 300.0, "discretionary", 0.8, "Retail apparel, electronics, goods."),
-        ("Dining", 400.0, "discretionary", 0.9, "Restaurants, cafes, takeout."),
-        ("Entertainment", 150.0, "discretionary", 1.0, "Streaming, movies, gaming, events.")
-    ]
-
-    cursor.executemany("""
-    INSERT OR REPLACE INTO budget_rules (category, monthly_limit, category_type, flexibility_weight, description)
-    VALUES (?, ?, ?, ?, ?)
-    """, budget_rules_data)
-
-    conn.commit()
     conn.close()
 
 def seed_transactions_from_dataset():
@@ -338,29 +259,45 @@ def seed_transactions_from_dataset():
 # Helper APIs for Two-Sided Bank vs Ledger Reconciliation
 # ----------------------------------------------------------------------
 
-def insert_bank_record(rec_id: str, date: str, amount_cents: int, description: str, reference: Optional[str] = None):
-    """Inserts a bank record with integer cents amount."""
+def insert_bank_record(
+    rec_id: str,
+    date: str,
+    amount_cents: int,
+    description: str,
+    reference: Optional[str] = None,
+    user_id: Optional[str] = None,
+    batch_id: Optional[str] = None
+):
+    """Inserts a bank record with integer cents amount and optional ownership."""
     if not isinstance(amount_cents, int) or isinstance(amount_cents, bool):
         raise TypeError(f"amount_cents must be an integer, got {type(amount_cents).__name__}")
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT OR REPLACE INTO bank_records (id, date, amount_cents, description, reference)
-    VALUES (?, ?, ?, ?, ?)
-    """, (rec_id, date, amount_cents, description, reference))
+    INSERT OR REPLACE INTO bank_records (id, date, amount_cents, description, reference, user_id, batch_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (rec_id, date, amount_cents, description, reference, user_id, batch_id))
     conn.commit()
     conn.close()
 
-def insert_ledger_record(rec_id: str, date: str, amount_cents: int, description: str, reference: Optional[str] = None):
-    """Inserts an ERP/accounting ledger record with integer cents amount."""
+def insert_ledger_record(
+    rec_id: str,
+    date: str,
+    amount_cents: int,
+    description: str,
+    reference: Optional[str] = None,
+    user_id: Optional[str] = None,
+    batch_id: Optional[str] = None
+):
+    """Inserts an ERP/accounting ledger record with integer cents amount and optional ownership."""
     if not isinstance(amount_cents, int) or isinstance(amount_cents, bool):
         raise TypeError(f"amount_cents must be an integer, got {type(amount_cents).__name__}")
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT OR REPLACE INTO ledger_records (id, date, amount_cents, description, reference)
-    VALUES (?, ?, ?, ?, ?)
-    """, (rec_id, date, amount_cents, description, reference))
+    INSERT OR REPLACE INTO ledger_records (id, date, amount_cents, description, reference, user_id, batch_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (rec_id, date, amount_cents, description, reference, user_id, batch_id))
     conn.commit()
     conn.close()
 
@@ -369,18 +306,20 @@ def insert_match(
     status: str,
     method: str,
     confidence: float = 1.0,
-    conn: Optional[sqlite3.Connection] = None
+    conn: Optional[sqlite3.Connection] = None,
+    user_id: Optional[str] = None,
+    run_id: Optional[str] = None
 ) -> str:
-    """Records a match between bank and ledger records."""
+    """Records a match between bank and ledger records with optional user and run scoping."""
     should_close = False
     if conn is None:
         conn = get_connection()
         should_close = True
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT OR REPLACE INTO matches (match_id, status, method, confidence)
-    VALUES (?, ?, ?, ?)
-    """, (match_id, status, method, confidence))
+    INSERT OR REPLACE INTO matches (match_id, status, method, confidence, user_id, run_id)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (match_id, status, method, confidence, user_id, run_id))
     if should_close:
         conn.commit()
         conn.close()
@@ -390,9 +329,10 @@ def add_match_member(
     match_id: str,
     side: str,
     record_id: str,
-    conn: Optional[sqlite3.Connection] = None
+    conn: Optional[sqlite3.Connection] = None,
+    user_id: Optional[str] = None
 ):
-    """Associates a bank or ledger record with a match."""
+    """Associates a bank or ledger record with a match and optional user ownership."""
     if side not in ("bank", "ledger"):
         raise ValueError(f"side must be 'bank' or 'ledger', got {side!r}")
     should_close = False
@@ -401,9 +341,9 @@ def add_match_member(
         should_close = True
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT OR REPLACE INTO match_members (match_id, side, record_id)
-    VALUES (?, ?, ?)
-    """, (match_id, side, record_id))
+    INSERT OR REPLACE INTO match_members (match_id, side, record_id, user_id)
+    VALUES (?, ?, ?, ?)
+    """, (match_id, side, record_id, user_id))
     if should_close:
         conn.commit()
         conn.close()
@@ -413,9 +353,11 @@ def insert_exception(
     side: str,
     exc_type: str,
     status: str = "open",
-    conn: Optional[sqlite3.Connection] = None
+    conn: Optional[sqlite3.Connection] = None,
+    user_id: Optional[str] = None,
+    run_id: Optional[str] = None
 ):
-    """Records a reconciliation exception."""
+    """Records a reconciliation exception with optional user and run scoping."""
     if side not in ("bank", "ledger"):
         raise ValueError(f"side must be 'bank' or 'ledger', got {side!r}")
     should_close = False
@@ -424,9 +366,9 @@ def insert_exception(
         should_close = True
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT INTO exceptions (record_id, side, type, status)
-    VALUES (?, ?, ?, ?)
-    """, (record_id, side, exc_type, status))
+    INSERT INTO exceptions (record_id, side, type, status, user_id, run_id)
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (record_id, side, exc_type, status, user_id, run_id))
     if should_close:
         conn.commit()
         conn.close()
@@ -456,14 +398,19 @@ def reset_reconciliation_tables(conn_or_path: Any = None):
         conn.commit()
         conn.close()
 
-def insert_review(match_id: str, decision: str, reviewer_note: Optional[str] = None):
-    """Records a human auditor review decision."""
+def insert_review(
+    match_id: str,
+    decision: str,
+    reviewer_note: Optional[str] = None,
+    user_id: Optional[str] = None
+):
+    """Records a human auditor review decision with optional user attribution."""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT INTO reviews (match_id, decision, reviewer_note)
-    VALUES (?, ?, ?)
-    """, (match_id, decision, reviewer_note))
+    INSERT INTO reviews (match_id, decision, reviewer_note, user_id)
+    VALUES (?, ?, ?, ?)
+    """, (match_id, decision, reviewer_note, user_id))
     conn.commit()
     conn.close()
 
@@ -477,7 +424,8 @@ def insert_audit_log(
     provider: str = "deterministic",
     model: str = "none",
     tokens: int = 0,
-    conn: Optional[sqlite3.Connection] = None
+    conn: Optional[sqlite3.Connection] = None,
+    user_id: Optional[str] = None
 ):
     """
     Writes an audit log entry for a step.
@@ -491,12 +439,12 @@ def insert_audit_log(
     cursor.execute("""
     INSERT INTO audit_logs (
         run_id, step_index, tool_name, arguments_json, output_json,
-        duration_ms, provider, model, tokens
+        duration_ms, provider, model, tokens, user_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         run_id, step_index, tool_name, arguments_json, output_json,
-        round(duration_ms, 2), provider, model, tokens
+        round(duration_ms, 2), provider, model, tokens, user_id
     ))
     if should_close:
         conn.commit()

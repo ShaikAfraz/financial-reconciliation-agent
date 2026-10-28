@@ -41,8 +41,8 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "bank_records": {"type": "array", "description": "List of bank statement transaction record dicts."},
-                "ledger_records": {"type": "array", "description": "List of accounting ledger record dicts."}
+                "bank_records": {"type": "array", "items": {"type": "object"}, "description": "List of bank statement transaction record dicts."},
+                "ledger_records": {"type": "array", "items": {"type": "object"}, "description": "List of accounting ledger record dicts."}
             },
             "required": ["bank_records", "ledger_records"]
         }
@@ -53,8 +53,8 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "bank_records": {"type": "array", "description": "Bank records."},
-                "ledger_records": {"type": "array", "description": "Ledger records."},
+                "bank_records": {"type": "array", "items": {"type": "object"}, "description": "Bank records."},
+                "ledger_records": {"type": "array", "items": {"type": "object"}, "description": "Ledger records."},
                 "date_window_days": {"type": "integer", "description": "Maximum allowed date discrepancy (days)."},
                 "fee_tolerance_cents": {"type": "integer", "description": "Maximum allowed fee discrepancy (cents)."}
             },
@@ -68,8 +68,8 @@ TOOL_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "target_item": {"type": "object", "description": "The item to reconcile."},
-                "candidate_records": {"type": "array", "description": "Candidate records from opposite side."},
-                "deterministic_features": {"type": "array", "description": "Deterministic features for candidates."},
+                "candidate_records": {"type": "array", "items": {"type": "object"}, "description": "Candidate records from opposite side."},
+                "deterministic_features": {"type": "array", "items": {"type": "object"}, "description": "Deterministic features for candidates."},
                 "item_side": {"type": "string", "enum": ["bank", "ledger"], "description": "Side of target item."},
                 "adjudication_mode": {"type": "string", "enum": ["single_shot", "tool_loop"], "description": "Adjudication mode."}
             },
@@ -84,8 +84,8 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "adjudication_response": {"type": "object", "description": "The candidate adjudication decision."},
                 "target_item": {"type": "object", "description": "The original target item."},
-                "candidate_records": {"type": "array", "description": "Candidate records pool."},
-                "deterministic_features": {"type": "array", "description": "Deterministic features."},
+                "candidate_records": {"type": "array", "items": {"type": "object"}, "description": "Candidate records pool."},
+                "deterministic_features": {"type": "array", "items": {"type": "object"}, "description": "Deterministic features."},
                 "fee_tolerance_cents": {"type": "integer", "description": "Configured fee tolerance."}
             },
             "required": ["adjudication_response", "target_item", "candidate_records"]
@@ -114,9 +114,9 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "bank_records": {"type": "array", "description": "List of bank records."},
-                "ledger_records": {"type": "array", "description": "List of ledger records."},
-                "matches": {"type": "array", "description": "List of matched groups."},
+                "bank_records": {"type": "array", "items": {"type": "object"}, "description": "List of bank records."},
+                "ledger_records": {"type": "array", "items": {"type": "object"}, "description": "List of ledger records."},
+                "matches": {"type": "array", "items": {"type": "object"}, "description": "List of matched groups."},
                 "opening_bank_balance_cents": {"type": "integer", "description": "Opening bank balance in cents."},
                 "opening_book_balance_cents": {"type": "integer", "description": "Opening book balance in cents."}
             },

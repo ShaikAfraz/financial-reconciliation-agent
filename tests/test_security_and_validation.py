@@ -48,7 +48,7 @@ class TestGeminiSecurityAndTrace(unittest.TestCase):
         self.assertNotIn("?key=", sent_req.full_url)
         self.assertEqual(
             sent_req.full_url,
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+            f"https://generativelanguage.googleapis.com/v1beta/models/{provider.model}:generateContent"
         )
 
         # Assert key is sent via x-goog-api-key header
@@ -91,6 +91,21 @@ class TestServerSecurityAndValidation(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Create test admin user and session
+        import auth.service as auth_service
+        try:
+            cls.user = auth_service.create_user(
+                username="test_sec_admin",
+                email="test_sec_admin@example.com",
+                password="AdminPassword123!",
+                role="admin"
+            )
+        except ValueError:
+            cls.user = auth_service.get_user_by_username("test_sec_admin")
+            auth_service.update_user(cls.user["id"], is_active=True, role="admin")
+
+        cls.raw_token, cls.csrf_token, cls.expires_at = auth_service.create_session(cls.user["id"])
+
         # Start ephemeral test server on localhost port 0
         cls.server = HTTPServer(("127.0.0.1", 0), FinancialAgentServerHandler)
         cls.port = cls.server.server_port
@@ -111,7 +126,12 @@ class TestServerSecurityAndValidation(unittest.TestCase):
         req = urllib.request.Request(
             url,
             data=data,
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "Cookie": f"session_id={self.raw_token}",
+                "X-CSRF-Token": self.csrf_token,
+                "Origin": f"http://127.0.0.1:{self.port}"
+            }
         )
         try:
             with urllib.request.urlopen(req) as resp:

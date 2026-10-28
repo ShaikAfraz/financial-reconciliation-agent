@@ -217,7 +217,10 @@ def main():
     p_bm.add_argument("--systems", help="Comma-separated reconciliation systems to evaluate (e.g. B0,B1,B2,B3,B4)")
     p_bm.add_argument("--system", help="Single system alias (for backward compatibility)")
     p_bm.add_argument("--repeats", type=int, default=5, help="Number of repeat benchmark iterations (default: 5)")
-    p_bm.add_argument("--output", "-o", help="Optional path to save JSON results")
+    # create-admin
+    p_admin = subparsers.add_parser("create-admin", help="Securely provision an initial administrator account")
+    p_admin.add_argument("--username", "-u", help="Administrator username or email")
+    p_admin.add_argument("--password", "-p", help="Administrator password (min 12 chars; prompts securely if omitted)")
 
     args = parser.parse_args()
     if not args.command:
@@ -238,6 +241,10 @@ def main():
         cmd_tune(args)
     elif args.command == "benchmark":
         cmd_benchmark(args)
+    elif args.command == "create-admin":
+        from cli.create_admin import run_create_admin
+        code = run_create_admin(username_arg=args.username, password_arg=args.password)
+        sys.exit(code)
 
 if __name__ == "__main__":
     main()

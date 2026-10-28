@@ -12,7 +12,7 @@
   "max_date_days": 5,
   "max_fee_cents": 1000,
   "max_retries": 3,
-  "model_id": "gemini-2.5-flash",
+  "model_id": "gemini-3.5-flash",
   "request_timeout_seconds": 30,
   "sim_threshold": 60.0,
   "subset_max_members": 4,

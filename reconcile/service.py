@@ -143,61 +143,86 @@ def seed_reconciliation_from_benchmark(split: str = "dev") -> Dict[str, Any]:
 
 
 def ensure_database_seeded() -> None:
-    """Verifies database contains records; seeds dev split if empty."""
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT count(*) FROM bank_records")
-    b_count = cursor.fetchone()[0]
-    cursor.execute("SELECT count(*) FROM matches")
-    m_count = cursor.fetchone()[0]
-    conn.close()
-
-    if b_count == 0 or m_count == 0:
-        seed_reconciliation_from_benchmark("dev")
+    """No-op in product code to enforce Rule 7 (no automatic benchmark seeding)."""
+    return
 
 
 def get_reconciliation_records(
     side: str = "all",
     status_filter: str = "all",
     search_query: str = "",
-    limit: int = 500
+    limit: int = 500,
+    user_id: Optional[str] = None,
+    run_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Returns bank and ledger records enriched with their match status, match ID,
-    method, and confidence.
+    method, and confidence, optionally scoped by user_id and run_id.
     """
-    ensure_database_seeded()
     conn = db.get_connection()
     cursor = conn.cursor()
 
     # Query bank records
-    cursor.execute("""
+    bank_sql = """
     SELECT 
-        b.id, b.date, b.amount_cents, b.description, b.reference,
+        b.id, b.date, b.amount_cents, b.description, b.reference, b.user_id, b.run_id,
         mm.match_id, m.status as match_status, m.method as match_method, m.confidence as match_confidence
     FROM bank_records b
     LEFT JOIN match_members mm ON b.id = mm.record_id AND mm.side = 'bank'
     LEFT JOIN matches m ON mm.match_id = m.match_id
-    ORDER BY b.date DESC, b.id ASC
-    LIMIT ?
-    """, (limit,))
+    """
+    bank_params: List[Any] = []
+    where_bank = []
+    if run_id is not None:
+        where_bank.append("b.run_id = ?")
+        bank_params.append(run_id)
+    else:
+        where_bank.append("b.run_id IS NULL")
+
+    if user_id is not None:
+        where_bank.append("(b.user_id = ? OR b.user_id IS NULL)")
+        bank_params.append(user_id)
+
+    if where_bank:
+        bank_sql += " WHERE " + " AND ".join(where_bank)
+    bank_sql += " ORDER BY b.date DESC, b.id ASC LIMIT ?"
+    bank_params.append(limit)
+    cursor.execute(bank_sql, tuple(bank_params))
     raw_bank = [dict(r) for r in cursor.fetchall()]
 
     # Query ledger records
-    cursor.execute("""
+    ledger_sql = """
     SELECT 
-        l.id, l.date, l.amount_cents, l.description, l.reference,
+        l.id, l.date, l.amount_cents, l.description, l.reference, l.user_id, l.run_id,
         mm.match_id, m.status as match_status, m.method as match_method, m.confidence as match_confidence
     FROM ledger_records l
     LEFT JOIN match_members mm ON l.id = mm.record_id AND mm.side = 'ledger'
     LEFT JOIN matches m ON mm.match_id = m.match_id
-    ORDER BY l.date DESC, l.id ASC
-    LIMIT ?
-    """, (limit,))
+    """
+    ledger_params: List[Any] = []
+    where_ledger = []
+    if run_id is not None:
+        where_ledger.append("l.run_id = ?")
+        ledger_params.append(run_id)
+    else:
+        where_ledger.append("l.run_id IS NULL")
+
+    if user_id is not None:
+        where_ledger.append("(l.user_id = ? OR l.user_id IS NULL)")
+        ledger_params.append(user_id)
+
+    if where_ledger:
+        ledger_sql += " WHERE " + " AND ".join(where_ledger)
+    ledger_sql += " ORDER BY l.date DESC, l.id ASC LIMIT ?"
+    ledger_params.append(limit)
+    cursor.execute(ledger_sql, tuple(ledger_params))
     raw_ledger = [dict(r) for r in cursor.fetchall()]
 
     # Query active matches
-    cursor.execute("SELECT * FROM matches ORDER BY match_id ASC")
+    if user_id is not None:
+        cursor.execute("SELECT * FROM matches WHERE user_id = ? OR user_id IS NULL ORDER BY match_id ASC", (user_id,))
+    else:
+        cursor.execute("SELECT * FROM matches ORDER BY match_id ASC")
     raw_matches = [dict(r) for r in cursor.fetchall()]
 
     conn.close()
@@ -238,7 +263,8 @@ def get_reconciliation_records(
                 "match_id": r["match_id"],
                 "match_status": r["match_status"] or "unmatched",
                 "match_method": r["match_method"],
-                "match_confidence": round(r["match_confidence"], 3) if r["match_confidence"] is not None else None
+                "match_confidence": round(r["match_confidence"], 3) if r["match_confidence"] is not None else None,
+                "user_id": r.get("user_id")
             })
         return out
 
@@ -254,26 +280,55 @@ def get_reconciliation_records(
     }
 
 
-def get_balance_proof() -> Dict[str, Any]:
+def get_balance_proof(user_id: Optional[str] = None, run_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Computes the authoritative Two-Sided Balance Proof in integer cents
-    from the current database state.
+    from the current database state, optionally scoped by user_id and run_id.
     """
-    ensure_database_seeded()
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records")
-    bank_records = [dict(r) for r in cursor.fetchall()]
+    if run_id is not None:
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records WHERE run_id = ?", (run_id,))
+        bank_records = [dict(r) for r in cursor.fetchall()]
 
-    cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records")
-    ledger_records = [dict(r) for r in cursor.fetchall()]
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records WHERE run_id = ?", (run_id,))
+        ledger_records = [dict(r) for r in cursor.fetchall()]
 
-    cursor.execute("SELECT match_id, status, method, confidence FROM matches")
-    matches_raw = [dict(r) for r in cursor.fetchall()]
+        cursor.execute("SELECT match_id, status, method, confidence FROM matches WHERE run_id = ?", (run_id,))
+        matches_raw = [dict(r) for r in cursor.fetchall()]
 
-    cursor.execute("SELECT match_id, side, record_id FROM match_members")
-    members_raw = cursor.fetchall()
+        cursor.execute("""
+        SELECT mm.match_id, mm.side, mm.record_id
+        FROM match_members mm
+        JOIN matches m ON mm.match_id = m.match_id
+        WHERE m.run_id = ?
+        """, (run_id,))
+        members_raw = cursor.fetchall()
+    elif user_id is not None:
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records WHERE (user_id = ? OR user_id IS NULL) AND run_id IS NULL", (user_id,))
+        bank_records = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records WHERE (user_id = ? OR user_id IS NULL) AND run_id IS NULL", (user_id,))
+        ledger_records = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT match_id, status, method, confidence FROM matches WHERE (user_id = ? OR user_id IS NULL) AND run_id IS NULL", (user_id,))
+        matches_raw = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT match_id, side, record_id FROM match_members WHERE (user_id = ? OR user_id IS NULL)", (user_id,))
+        members_raw = cursor.fetchall()
+    else:
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM bank_records WHERE run_id IS NULL")
+        bank_records = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT id, date, amount_cents, description, reference FROM ledger_records WHERE run_id IS NULL")
+        ledger_records = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT match_id, status, method, confidence FROM matches WHERE run_id IS NULL")
+        matches_raw = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT match_id, side, record_id FROM match_members")
+        members_raw = cursor.fetchall()
 
     conn.close()
 
@@ -336,34 +391,56 @@ def get_balance_proof() -> Dict[str, Any]:
     return proof
 
 
-def get_review_queue() -> List[Dict[str, Any]]:
+def get_review_queue(user_id: Optional[str] = None, run_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Returns items requiring human auditor review.
+    Returns items requiring human auditor review, optionally scoped by user_id and run_id.
     Each item contains the target record, candidate matches with deterministic features,
     and a visually distinct, unverified AI rationale.
     """
-    ensure_database_seeded()
     conn = db.get_connection()
     cursor = conn.cursor()
 
     # Find matches marked as pending_review or rejected
-    cursor.execute("""
+    run_filter = "AND m.run_id = ?" if run_id is not None else ("AND m.run_id IS NULL" if user_id is None else "")
+    params = []
+    where_parts = ["m.status IN ('pending_review', 'rejected')"]
+
+    if user_id is not None:
+        where_parts.append("(m.user_id = ? OR mm.user_id = ? OR (m.user_id IS NULL AND mm.user_id IS NULL))")
+        params.extend([user_id, user_id])
+
+    if run_id is not None:
+        where_parts.append("m.run_id = ?")
+        params.append(run_id)
+
+    query = f"""
     SELECT m.match_id, m.status, m.method, m.confidence,
            GROUP_CONCAT(CASE WHEN mm.side = 'bank' THEN mm.record_id END) as bank_ids,
            GROUP_CONCAT(CASE WHEN mm.side = 'ledger' THEN mm.record_id END) as ledger_ids
     FROM matches m
     JOIN match_members mm ON m.match_id = mm.match_id
-    WHERE m.status IN ('pending_review', 'rejected')
+    WHERE {" AND ".join(where_parts)}
     GROUP BY m.match_id
-    """)
+    """
+    cursor.execute(query, tuple(params))
     review_matches = [dict(r) for r in cursor.fetchall()]
 
     # Also look for exceptions with status = 'pending_review' or 'open'
-    cursor.execute("""
+    exc_where = ["status IN ('pending_review', 'open')"]
+    exc_params = []
+    if user_id is not None:
+        exc_where.append("(user_id = ? OR user_id IS NULL)")
+        exc_params.append(user_id)
+    if run_id is not None:
+        exc_where.append("run_id = ?")
+        exc_params.append(run_id)
+
+    exc_query = f"""
     SELECT id, record_id, side, type, status FROM exceptions
-    WHERE status IN ('pending_review', 'open')
+    WHERE {" AND ".join(exc_where)}
     ORDER BY id ASC LIMIT 10
-    """)
+    """
+    cursor.execute(exc_query, tuple(exc_params))
     pending_exceptions = [dict(r) for r in cursor.fetchall()]
 
     queue_items = []
@@ -554,13 +631,15 @@ def confirm_match(
     target_id: str,
     candidate_id: str,
     match_id: Optional[str] = None,
-    reviewer_note: Optional[str] = None
+    reviewer_note: Optional[str] = None,
+    user_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Authoritative state change: confirms a match between target and candidate records.
     - Validates target and candidate existence.
     - Enforces opposite sides (one bank, one ledger).
     - Enforces deterministic arithmetic tolerance (amount delta <= MAX_FEE_TOLERANCE_CENTS).
+    - Enforces cross-user isolation: cannot modify another user's records.
     - Updates matches table to 'approved' and confidence to 1.0.
     - Resolves any associated exceptions.
     - Persists audit log and review row inside a single atomic transaction.
@@ -575,14 +654,14 @@ def confirm_match(
 
     try:
         # Determine sides of records
-        cursor.execute("SELECT id, amount_cents FROM bank_records WHERE id = ?", (target_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM bank_records WHERE id = ?", (target_id,))
         b_target = cursor.fetchone()
-        cursor.execute("SELECT id, amount_cents FROM ledger_records WHERE id = ?", (target_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM ledger_records WHERE id = ?", (target_id,))
         l_target = cursor.fetchone()
 
-        cursor.execute("SELECT id, amount_cents FROM bank_records WHERE id = ?", (candidate_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM bank_records WHERE id = ?", (candidate_id,))
         b_cand = cursor.fetchone()
-        cursor.execute("SELECT id, amount_cents FROM ledger_records WHERE id = ?", (candidate_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM ledger_records WHERE id = ?", (candidate_id,))
         l_cand = cursor.fetchone()
 
         bank_rec = None
@@ -599,6 +678,12 @@ def confirm_match(
                 f"Invalid record pairing: one record must be a bank record and one must be a ledger record. "
                 f"Target: {target_id}, Candidate: {candidate_id}"
             )
+
+        # Cross-user ownership enforcement
+        if user_id is not None:
+            for rec in (bank_rec, ledger_rec):
+                if rec["user_id"] and rec["user_id"] != user_id:
+                    raise PermissionError("Cross-user modification denied: record is owned by another user.")
 
         # Deterministic arithmetic check
         b_cents = int(bank_rec["amount_cents"])
@@ -628,24 +713,25 @@ def confirm_match(
 
         # 1. Update/Insert into matches
         cursor.execute("""
-        INSERT INTO matches (match_id, status, method, confidence)
-        VALUES (?, 'approved', 'human_confirmed', 1.0)
+        INSERT INTO matches (match_id, status, method, confidence, user_id)
+        VALUES (?, 'approved', 'human_confirmed', 1.0, ?)
         ON CONFLICT(match_id) DO UPDATE SET
             status = 'approved',
             method = 'human_confirmed',
-            confidence = 1.0
-        """, (match_id,))
+            confidence = 1.0,
+            user_id = coalesce(user_id, excluded.user_id)
+        """, (match_id, user_id))
 
         # 2. Update match members
         cursor.execute("""
-        INSERT OR REPLACE INTO match_members (match_id, side, record_id)
-        VALUES (?, 'bank', ?)
-        """, (match_id, bank_id))
+        INSERT OR REPLACE INTO match_members (match_id, side, record_id, user_id)
+        VALUES (?, 'bank', ?, ?)
+        """, (match_id, bank_id, user_id))
 
         cursor.execute("""
-        INSERT OR REPLACE INTO match_members (match_id, side, record_id)
-        VALUES (?, 'ledger', ?)
-        """, (match_id, ledger_id))
+        INSERT OR REPLACE INTO match_members (match_id, side, record_id, user_id)
+        VALUES (?, 'ledger', ?, ?)
+        """, (match_id, ledger_id, user_id))
 
         # 3. Resolve exceptions
         cursor.execute("""
@@ -655,9 +741,9 @@ def confirm_match(
 
         # 4. Record review decision
         cursor.execute("""
-        INSERT INTO reviews (match_id, decision, reviewer_note)
-        VALUES (?, 'confirm', ?)
-        """, (match_id, reviewer_note or "Auditor confirmed match."))
+        INSERT INTO reviews (match_id, decision, reviewer_note, user_id)
+        VALUES (?, 'confirm', ?, ?)
+        """, (match_id, reviewer_note or "Auditor confirmed match.", user_id))
 
         # 5. Record immutable audit log
         audit_args = {
@@ -677,10 +763,10 @@ def confirm_match(
         cursor.execute("""
         INSERT INTO audit_logs (
             run_id, step_index, tool_name, arguments_json, output_json,
-            duration_ms, provider, model, tokens
+            duration_ms, provider, model, tokens, user_id
         )
-        VALUES (?, 1, 'human_review_confirm', ?, ?, 12.5, 'human_auditor', 'manual', 0)
-        """, (f"AUDIT-CONFIRM-{match_id}", json.dumps(audit_args), json.dumps(audit_out)))
+        VALUES (?, 1, 'human_review_confirm', ?, ?, 12.5, 'human_auditor', 'manual', 0, ?)
+        """, (f"AUDIT-CONFIRM-{match_id}", json.dumps(audit_args), json.dumps(audit_out), user_id))
 
         conn.commit()
 
@@ -700,12 +786,14 @@ def confirm_match(
 def reject_match(
     match_id: Optional[str] = None,
     target_id: Optional[str] = None,
-    reviewer_note: Optional[str] = None
+    reviewer_note: Optional[str] = None,
+    user_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Authoritative state change: rejects a tentative match.
     - Marks match status as 'rejected'.
     - Returns the target item to the queue (ensures exception has status 'pending_review').
+    - Enforces cross-user isolation.
     - Inserts review row and audit log inside a single atomic transaction.
     """
     if not match_id and not target_id:
@@ -723,6 +811,12 @@ def reject_match(
                 match_id = m_row[0]
 
         if match_id:
+            if user_id is not None:
+                cursor.execute("SELECT user_id FROM matches WHERE match_id = ?", (match_id,))
+                m_user = cursor.fetchone()
+                if m_user and m_user[0] and m_user[0] != user_id:
+                    raise PermissionError("Cross-user modification denied: match is owned by another user.")
+
             cursor.execute("SELECT side, record_id FROM match_members WHERE match_id = ?", (match_id,))
             affected_records = cursor.fetchall()
             # Set match status to rejected
@@ -732,12 +826,14 @@ def reject_match(
 
         # If target_id provided, ensure it's in affected_records
         if target_id and not any(r["record_id"] == target_id for r in affected_records):
-            cursor.execute("SELECT 'bank' as side, id as record_id FROM bank_records WHERE id = ?", (target_id,))
+            cursor.execute("SELECT 'bank' as side, id as record_id, user_id FROM bank_records WHERE id = ?", (target_id,))
             t_row = cursor.fetchone()
             if not t_row:
-                cursor.execute("SELECT 'ledger' as side, id as record_id FROM ledger_records WHERE id = ?", (target_id,))
+                cursor.execute("SELECT 'ledger' as side, id as record_id, user_id FROM ledger_records WHERE id = ?", (target_id,))
                 t_row = cursor.fetchone()
             if t_row:
+                if user_id is not None and t_row["user_id"] and t_row["user_id"] != user_id:
+                    raise PermissionError("Cross-user modification denied: target record is owned by another user.")
                 affected_records.append(t_row)
 
         if not affected_records and not target_id:
@@ -753,15 +849,15 @@ def reject_match(
                 cursor.execute("UPDATE exceptions SET status = 'pending_review' WHERE record_id = ?", (rid,))
             else:
                 cursor.execute("""
-                INSERT INTO exceptions (record_id, side, type, status)
-                VALUES (?, ?, 'auditor_rejected', 'pending_review')
-                """, (rid, rside))
+                INSERT INTO exceptions (record_id, side, type, status, user_id)
+                VALUES (?, ?, 'auditor_rejected', 'pending_review', ?)
+                """, (rid, rside, user_id))
 
         # Record review decision
         cursor.execute("""
-        INSERT INTO reviews (match_id, decision, reviewer_note)
-        VALUES (?, 'reject', ?)
-        """, (match_id, reviewer_note or "Auditor rejected tentative match. Item returned to queue."))
+        INSERT INTO reviews (match_id, decision, reviewer_note, user_id)
+        VALUES (?, 'reject', ?, ?)
+        """, (match_id, reviewer_note or "Auditor rejected tentative match. Item returned to queue.", user_id))
 
         # Record audit log
         audit_args = {
@@ -778,10 +874,10 @@ def reject_match(
         cursor.execute("""
         INSERT INTO audit_logs (
             run_id, step_index, tool_name, arguments_json, output_json,
-            duration_ms, provider, model, tokens
+            duration_ms, provider, model, tokens, user_id
         )
-        VALUES (?, 1, 'human_review_reject', ?, ?, 9.8, 'human_auditor', 'manual', 0)
-        """, (f"AUDIT-REJECT-{match_id}", json.dumps(audit_args), json.dumps(audit_out)))
+        VALUES (?, 1, 'human_review_reject', ?, ?, 9.8, 'human_auditor', 'manual', 0, ?)
+        """, (f"AUDIT-REJECT-{match_id}", json.dumps(audit_args), json.dumps(audit_out), user_id))
 
         conn.commit()
 
@@ -799,7 +895,8 @@ def reassign_match(
     target_id: str,
     new_candidate_id: str,
     match_id: Optional[str] = None,
-    reviewer_note: Optional[str] = None
+    reviewer_note: Optional[str] = None,
+    user_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Authoritative state change: reassigns a target record to an alternate candidate.
@@ -815,14 +912,14 @@ def reassign_match(
 
     try:
         # Determine sides
-        cursor.execute("SELECT id, amount_cents FROM bank_records WHERE id = ?", (target_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM bank_records WHERE id = ?", (target_id,))
         b_t = cursor.fetchone()
-        cursor.execute("SELECT id, amount_cents FROM ledger_records WHERE id = ?", (target_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM ledger_records WHERE id = ?", (target_id,))
         l_t = cursor.fetchone()
 
-        cursor.execute("SELECT id, amount_cents FROM bank_records WHERE id = ?", (new_candidate_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM bank_records WHERE id = ?", (new_candidate_id,))
         b_c = cursor.fetchone()
-        cursor.execute("SELECT id, amount_cents FROM ledger_records WHERE id = ?", (new_candidate_id,))
+        cursor.execute("SELECT id, amount_cents, user_id FROM ledger_records WHERE id = ?", (new_candidate_id,))
         l_c = cursor.fetchone()
 
         if b_t and l_c:
@@ -835,6 +932,11 @@ def reassign_match(
             raise ValueError(
                 f"Reassignment requires one bank record and one ledger record. Target: {target_id}, Candidate: {new_candidate_id}"
             )
+
+        if user_id is not None:
+            for rec in (bank_rec, ledger_rec):
+                if rec["user_id"] and rec["user_id"] != user_id:
+                    raise PermissionError("Cross-user modification denied: record is owned by another user.")
 
         b_cents = int(bank_rec["amount_cents"])
         l_cents = int(ledger_rec["amount_cents"])
@@ -856,23 +958,24 @@ def reassign_match(
 
         # Update matches table
         cursor.execute("""
-        INSERT INTO matches (match_id, status, method, confidence)
-        VALUES (?, 'approved', 'human_reassigned', 1.0)
+        INSERT INTO matches (match_id, status, method, confidence, user_id)
+        VALUES (?, 'approved', 'human_reassigned', 1.0, ?)
         ON CONFLICT(match_id) DO UPDATE SET
             status = 'approved',
             method = 'human_reassigned',
-            confidence = 1.0
-        """, (match_id,))
+            confidence = 1.0,
+            user_id = COALESCE(excluded.user_id, matches.user_id)
+        """, (match_id, user_id))
 
-        cursor.execute("INSERT OR REPLACE INTO match_members (match_id, side, record_id) VALUES (?, 'bank', ?)", (match_id, bank_id))
-        cursor.execute("INSERT OR REPLACE INTO match_members (match_id, side, record_id) VALUES (?, 'ledger', ?)", (match_id, ledger_id))
+        cursor.execute("INSERT OR REPLACE INTO match_members (match_id, side, record_id, user_id) VALUES (?, 'bank', ?, ?)", (match_id, bank_id, user_id))
+        cursor.execute("INSERT OR REPLACE INTO match_members (match_id, side, record_id, user_id) VALUES (?, 'ledger', ?, ?)", (match_id, ledger_id, user_id))
 
         cursor.execute("UPDATE exceptions SET status = 'resolved' WHERE record_id IN (?, ?)", (bank_id, ledger_id))
 
         cursor.execute("""
-        INSERT INTO reviews (match_id, decision, reviewer_note)
-        VALUES (?, 'reassign', ?)
-        """, (match_id, reviewer_note or f"Auditor reassigned target {target_id} to {new_candidate_id}."))
+        INSERT INTO reviews (match_id, decision, reviewer_note, user_id)
+        VALUES (?, 'reassign', ?, ?)
+        """, (match_id, reviewer_note or f"Auditor reassigned target {target_id} to {new_candidate_id}.", user_id))
 
         audit_args = {
             "target_id": target_id,
@@ -883,10 +986,10 @@ def reassign_match(
         cursor.execute("""
         INSERT INTO audit_logs (
             run_id, step_index, tool_name, arguments_json, output_json,
-            duration_ms, provider, model, tokens
+            duration_ms, provider, model, tokens, user_id
         )
-        VALUES (?, 1, 'human_review_reassign', ?, ?, 11.2, 'human_auditor', 'manual', 0)
-        """, (f"AUDIT-REASSIGN-{match_id}", json.dumps(audit_args), json.dumps({"status": "reassigned"})))
+        VALUES (?, 1, 'human_review_reassign', ?, ?, 11.2, 'human_auditor', 'manual', 0, ?)
+        """, (f"AUDIT-REASSIGN-{match_id}", json.dumps(audit_args), json.dumps({"status": "reassigned"}), user_id))
 
         conn.commit()
 
@@ -903,18 +1006,199 @@ def reassign_match(
     }
 
 
-def get_audit_logs(limit: int = 100) -> List[Dict[str, Any]]:
-    """Retrieves recent audit logs from SQLite."""
+def get_audit_logs(limit: int = 100, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Retrieves recent audit logs from SQLite, optionally scoped by user."""
     conn = db.get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-    SELECT id, timestamp, run_id, step_index, tool_name, arguments_json, output_json, duration_ms, provider, model, tokens
-    FROM audit_logs
-    ORDER BY id DESC LIMIT ?
-    """, (limit,))
+    if user_id is not None:
+        cursor.execute("""
+        SELECT id, timestamp, run_id, step_index, tool_name, arguments_json, output_json, duration_ms, provider, model, tokens, user_id
+        FROM audit_logs
+        WHERE user_id = ? OR user_id IS NULL
+        ORDER BY id DESC LIMIT ?
+        """, (user_id, limit))
+    else:
+        cursor.execute("""
+        SELECT id, timestamp, run_id, step_index, tool_name, arguments_json, output_json, duration_ms, provider, model, tokens, user_id
+        FROM audit_logs
+        ORDER BY id DESC LIMIT ?
+        """, (limit,))
     rows = [dict(r) for r in cursor.fetchall()]
     conn.close()
     return rows
+
+
+def create_run(user_id: str, name: str, settings: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Creates a new user-owned reconciliation run."""
+    if not user_id:
+        raise ValueError("user_id is required.")
+    if not name or not name.strip():
+        raise ValueError("name is required.")
+    run_id = f"RUN-{uuid.uuid4().hex[:8].upper()}"
+    settings_json = json.dumps(settings or {})
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO runs (id, user_id, name, status, settings_json)
+    VALUES (?, ?, ?, 'pending', ?)
+    """, (run_id, user_id, name.strip(), settings_json))
+    conn.commit()
+    conn.close()
+    return {
+        "id": run_id,
+        "user_id": user_id,
+        "name": name.strip(),
+        "status": "pending",
+        "settings": settings or {}
+    }
+
+
+def list_runs(user_id: str) -> List[Dict[str, Any]]:
+    """Lists reconciliation runs owned by the specified user."""
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT id, user_id, name, status, settings_json, created_at, updated_at
+    FROM runs
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    """, (user_id,))
+    rows = []
+    for r in cursor.fetchall():
+        d = dict(r)
+        if d.get("settings_json"):
+            try:
+                d["settings"] = json.loads(d["settings_json"])
+            except Exception:
+                d["settings"] = {}
+        else:
+            d["settings"] = {}
+        rows.append(d)
+    conn.close()
+    return rows
+
+
+def get_run(run_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    """Fetches a specific run owned by the user."""
+    conn = db.get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT id, user_id, name, status, settings_json, created_at, updated_at
+    FROM runs
+    WHERE id = ? AND user_id = ?
+    """, (run_id, user_id))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    if d.get("settings_json"):
+        try:
+            d["settings"] = json.loads(d["settings_json"])
+        except Exception:
+            d["settings"] = {}
+    return d
+
+
+def import_statement_csv(
+    user_id: str,
+    filename: str,
+    content: str,
+    record_type: str,
+    run_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Imports bank or ledger transactions from CSV content into SQLite.
+    Tracks batch in import_batches and rows in import_rows.
+    """
+    if not user_id:
+        raise ValueError("user_id is required.")
+    if record_type not in ("bank", "ledger"):
+        raise ValueError(f"record_type must be 'bank' or 'ledger', got {record_type!r}")
+
+    import csv
+    import io
+
+    batch_id = f"BATCH-{uuid.uuid4().hex[:8].upper()}"
+    conn = db.get_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Check run ownership if run_id provided
+        if run_id:
+            cursor.execute("SELECT user_id FROM runs WHERE id = ?", (run_id,))
+            run_row = cursor.fetchone()
+            if not run_row or run_row["user_id"] != user_id:
+                raise PermissionError("Cross-user run access denied.")
+
+        cursor.execute("""
+        INSERT INTO import_batches (id, user_id, run_id, side, record_type, filename, row_count, total_records)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+        """, (batch_id, user_id, run_id, record_type, record_type, filename))
+
+        reader = csv.DictReader(io.StringIO(content.strip()))
+        if not reader.fieldnames:
+            raise ValueError("CSV contains no header row.")
+
+        # Normalize fieldnames map
+        field_map = {}
+        for col in reader.fieldnames:
+            c = col.strip().lower().replace(" ", "_")
+            field_map[c] = col
+
+        date_col = field_map.get("date") or field_map.get("transaction_date")
+        desc_col = field_map.get("description") or field_map.get("memo") or field_map.get("name")
+        amt_col = field_map.get("amount_cents") or field_map.get("amount")
+        ref_col = field_map.get("reference") or field_map.get("id") or field_map.get("ref")
+
+        if not date_col or not amt_col:
+            raise ValueError("CSV must include at minimum 'date' and 'amount' columns.")
+
+        parsed_count = 0
+        for idx, row in enumerate(reader, start=1):
+            raw_json = json.dumps(row)
+            try:
+                date_val = row[date_col].strip()
+                desc_val = row[desc_col].strip() if desc_col and row.get(desc_col) else "CSV Ingestion"
+                ref_val = row[ref_col].strip() if ref_col and row.get(ref_col) else None
+
+                raw_amt = row[amt_col].strip().replace("$", "").replace(",", "")
+                if "." in raw_amt:
+                    # Decimal representation: convert to cents safely
+                    parts = raw_amt.split(".")
+                    sign = -1 if parts[0].startswith("-") else 1
+                    dollars = abs(int(parts[0]))
+                    cents = int((parts[1] + "00")[:2])
+                    amt_cents = sign * (dollars * 100 + cents)
+                else:
+                    amt_cents = int(raw_amt)
+
+                rec_id = ref_val or f"{record_type.upper()}-{uuid.uuid4().hex[:8].upper()}"
+
+                cursor.execute("""
+                INSERT INTO import_rows (batch_id, row_index, raw_data_json, status)
+                VALUES (?, ?, ?, 'parsed')
+                """, (batch_id, idx, raw_json))
+                parsed_count += 1
+
+            except Exception as e:
+                cursor.execute("""
+                INSERT INTO import_rows (batch_id, row_index, raw_data_json, status, error_message)
+                VALUES (?, ?, ?, 'error', ?)
+                """, (batch_id, idx, raw_json, str(e)))
+
+        cursor.execute("UPDATE import_batches SET row_count = ?, total_records = ? WHERE id = ?", (parsed_count, parsed_count, batch_id))
+        conn.commit()
+
+    finally:
+        conn.close()
+
+    return {
+        "batch_id": batch_id,
+        "filename": filename,
+        "record_type": record_type,
+        "total_records": parsed_count
+    }
 
 
 def get_tools_metadata() -> List[Dict[str, Any]]:

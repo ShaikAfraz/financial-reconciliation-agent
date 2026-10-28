@@ -30,6 +30,25 @@ except ImportError:
     GENAI_AVAILABLE = False
 
 CONFIG_PATH = Path(__file__).parent.parent.parent.absolute() / "reconcile" / "config.json"
+ENV_PATH = Path(__file__).parent.parent.parent.absolute() / ".env"
+
+def _load_env_if_present() -> None:
+    if os.environ.get("GEMINI_API_KEY") or not ENV_PATH.exists():
+        return
+    try:
+        with open(ENV_PATH, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+    except Exception:
+        pass
+
+_load_env_if_present()
 
 def load_reconcile_config() -> Dict[str, Any]:
     if CONFIG_PATH.exists():
@@ -55,8 +74,8 @@ class GeminiAgentProvider(BaseAgentProvider):
     ):
         self.config = config or load_reconcile_config()
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-        # Read pinned model from config, fallback to gemini-2.5-flash
-        self.model = model or self.config.get("model_id", "gemini-2.5-flash")
+        # Read pinned model from config, fallback to gemini-3.5-flash
+        self.model = model or self.config.get("model_id", "gemini-3.5-flash")
         self.timeout_seconds = int(self.config.get("request_timeout_seconds", 30))
         self.max_retries = int(self.config.get("max_retries", 3))
         self.backoff_factor = float(self.config.get("backoff_factor", 2.0))
@@ -118,6 +137,8 @@ class GeminiAgentProvider(BaseAgentProvider):
             "response_mime_type": "application/json",
             "response_schema": response_schema
         }
+        if self.config.get("max_output_tokens") is not None:
+            config_args["max_output_tokens"] = int(self.config["max_output_tokens"])
         if system_instruction:
             config_args["system_instruction"] = system_instruction
 
@@ -179,7 +200,10 @@ class GeminiAgentProvider(BaseAgentProvider):
                     "rate limit" in err_str.lower() or
                     "503" in err_str or
                     "service unavailable" in err_str.lower() or
-                    "deadline exceeded" in err_str.lower()
+                    "deadline exceeded" in err_str.lower() or
+                    "deadline_exceeded" in err_str.lower() or
+                    "deadline expired" in err_str.lower() or
+                    "504" in err_str
                 )
 
                 if is_retryable and attempt < self.max_retries - 1:

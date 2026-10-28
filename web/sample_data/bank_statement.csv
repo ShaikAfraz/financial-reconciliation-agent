@@ -1,0 +1,13 @@
+Date,Description,Amount,Reference
+2026-10-02,Monthly payroll deposit,5000.00,PAY-1001
+2026-10-03,Apartment rent,-1500.00,RENT-1002
+2026-10-04,Neighborhood market,-125.45,POS-1003
+2026-10-05,Office supplies,-89.99,POS-1004
+2026-10-06,Electric utility,-74.20,UTIL-1005
+2026-10-07,ATM cash withdrawal,-100.00,ATM-1006
+2026-10-08,Customer reimbursement deposit,300.00,DEP-1007
+2026-10-09,Monthly account fee,-4.50,FEE-1008
+2026-10-10,Returned purchase refund,25.00,REF-1009
+2026-10-11,Internet service,-59.99,UTIL-1010
+2026-10-12,Card network adjustment,-18.00,BANK-ONLY-1011
+2026-10-13,ATM service fee,-2.50,FEE-1012

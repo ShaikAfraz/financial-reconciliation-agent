@@ -35,6 +35,21 @@ class TestReconciliationWebApi(unittest.TestCase):
         # Ensure test database has clean benchmark state
         rec_service.seed_reconciliation_from_benchmark("dev")
 
+        # Create test admin user and session
+        import auth.service as auth_service
+        try:
+            cls.user = auth_service.create_user(
+                username="test_api_analyst",
+                email="test_analyst@example.com",
+                password="TestPassword123!",
+                role="admin"
+            )
+        except ValueError:
+            cls.user = auth_service.get_user_by_username("test_api_analyst")
+            auth_service.update_user(cls.user["id"], is_active=True, role="admin")
+
+        cls.raw_token, cls.csrf_token, cls.expires_at = auth_service.create_session(cls.user["id"])
+
         # Start ephemeral test server on localhost port 0
         cls.server = HTTPServer(("127.0.0.1", 0), FinancialAgentServerHandler)
         cls.port = cls.server.server_port
@@ -52,7 +67,11 @@ class TestReconciliationWebApi(unittest.TestCase):
 
     def _api_get(self, endpoint: str):
         url = f"http://127.0.0.1:{self.port}{endpoint}"
-        req = urllib.request.Request(url, method="GET")
+        req = urllib.request.Request(
+            url,
+            method="GET",
+            headers={"Cookie": f"session_id={self.raw_token}"}
+        )
         try:
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
@@ -64,7 +83,17 @@ class TestReconciliationWebApi(unittest.TestCase):
     def _api_post(self, endpoint: str, payload: dict):
         url = f"http://127.0.0.1:{self.port}{endpoint}"
         body = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=body, method="POST", headers={"Content-Type": "application/json"})
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Cookie": f"session_id={self.raw_token}",
+                "X-CSRF-Token": self.csrf_token,
+                "Origin": f"http://127.0.0.1:{self.port}"
+            }
+        )
         try:
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode("utf-8"))

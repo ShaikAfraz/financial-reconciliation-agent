@@ -11,11 +11,13 @@
 
 # Data cache & temporary files
 data/cache/
+data/staging/
 uploads/
 logs/
 backups/
+.DS_Store
 
-# Python bytecode and caches
+# Python bytecode and caches1
 __pycache__/
 *.pyc
 *.pyo

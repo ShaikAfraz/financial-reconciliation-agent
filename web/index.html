@@ -1,331 +1,139 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Veritas Treasury • Autonomous Financial Reconciliation & Audit Suite</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Veritas Treasury | Reconciliation</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-  <!-- Ambient Light Mesh Background -->
-  <div class="ambient-glow ambient-glow-1"></div>
-  <div class="ambient-glow ambient-glow-2"></div>
-  <div class="ambient-glow ambient-glow-3"></div>
-
-  <!-- Executive Header -->
-  <header class="app-header">
-    <div class="brand">
-      <div class="brand-crest">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L3 7V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V7L12 2Z" fill="url(#emerald-crest)" stroke="#34d399" stroke-width="1.2"/>
-          <path d="M12 6L7 11H10V17H14V11H17L12 6Z" fill="#ffffff" fill-opacity="0.95"/>
-          <defs>
-            <linearGradient id="emerald-crest" x1="3" y1="2" x2="21" y2="24" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#047857"/>
-              <stop offset="0.5" stop-color="#10b981"/>
-              <stop offset="1" stop-color="#059669"/>
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <div>
-        <div class="brand-title">VERITAS TREASURY <span class="brand-edition">EMERALD EDITION</span></div>
-        <div class="brand-subtitle">Autonomous Two-Sided Financial Reconciliation & Audit Suite</div>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs" role="tablist">
-      <button class="tab-button active" data-tab="reconcile" role="tab" aria-selected="true">
-        <span class="tab-icon">◈</span>
-        <span class="tab-label">Two-Sided Reconciliation</span>
-      </button>
-      <button class="tab-button" data-tab="queue" role="tab" aria-selected="false">
-        <span class="tab-icon">⚡</span>
-        <span class="tab-label">Review Queue</span>
-        <span id="queue-count-badge" class="tag-badge warning" style="margin-left: 6px; padding: 1px 7px; font-size: 0.68rem; display: none;">0</span>
-      </button>
-      <button class="tab-button" data-tab="audit" role="tab" aria-selected="false">
-        <span class="tab-icon">📋</span>
-        <span class="tab-label">Audit Trail</span>
-      </button>
-      <button class="tab-button" data-tab="tools" role="tab" aria-selected="false">
-        <span class="tab-icon">⚙</span>
-        <span class="tab-label">Tool Registry</span>
-      </button>
-    </nav>
-
-    <!-- Institutional Live Status -->
-    <div class="header-status">
-      <div class="status-badge online">
-        <span class="status-dot pulse-emerald"></span>
-        <span class="status-text">SQLite Core Active</span>
-      </div>
-      <div class="status-badge auditor-badge">
-        <span class="status-dot emerald-subtle"></span>
-        <span>Auditor #8492</span>
-      </div>
-      <div class="status-badge clock-badge">
-        <span id="live-clock">--:--:-- UTC</span>
-      </div>
-    </div>
-  </header>
-
-  <main class="app-container">
-
-    <!-- INSTITUTIONAL BALANCE PROOF PANEL (PERMANENT TOP BANNER) -->
-    <section class="balance-proof-banner" id="balance-proof-section">
-      <div class="proof-header-row">
-        <div class="proof-title-group">
-          <div class="proof-crest-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-          </div>
-          <div>
-            <div class="proof-main-title">Arithmetic consistency check</div>
-            <div class="proof-subtitle">Matched groups have equal totals on both sides. This does not compare against statement closing balances.</div>
-          </div>
-        </div>
-
-        <div id="proof-variance-pill" class="proof-variance-pill balanced">
-          <span class="proof-status-dot"></span>
-          <span id="proof-variance-label">Difference: $0.00</span>
-          <span id="proof-status-tag" style="font-size: 0.72rem; opacity: 0.85;">Consistent</span>
-        </div>
-      </div>
-
-      <div class="proof-grid">
-        <div class="proof-metric-card">
-          <span class="proof-metric-lbl">Ending Bank Balance</span>
-          <span id="proof-ending-bank" class="proof-metric-val">$0.00</span>
-          <span class="proof-metric-sub">Statement Activity</span>
-        </div>
-        <div class="proof-metric-card">
-          <span class="proof-metric-lbl">Ending Book Balance</span>
-          <span id="proof-ending-book" class="proof-metric-val">$0.00</span>
-          <span class="proof-metric-sub">General Ledger Activity</span>
-        </div>
-        <div class="proof-metric-card">
-          <span class="proof-metric-lbl">In-Transit Deposits</span>
-          <span id="proof-unmatched-ledger" class="proof-metric-val emerald-txt">$0.00</span>
-          <span class="proof-metric-sub"><span id="proof-unmatched-ledger-count">0</span> Unmatched Ledger Items</span>
-        </div>
-        <div class="proof-metric-card">
-          <span class="proof-metric-lbl">Unposted Bank Items</span>
-          <span id="proof-unmatched-bank" class="proof-metric-val amber-txt">$0.00</span>
-          <span class="proof-metric-sub"><span id="proof-unmatched-bank-count">0</span> Unmatched Bank Items</span>
-        </div>
-        <div class="proof-metric-card">
-          <span class="proof-metric-lbl">Processing Fees</span>
-          <span id="proof-fees" class="proof-metric-val">$0.00</span>
-          <span class="proof-metric-sub">Fee Differential Adjustments</span>
-        </div>
-        <div class="proof-metric-card" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);">
-          <span class="proof-metric-lbl">Adjusted Net Parity</span>
-          <span id="proof-adjusted-parity" class="proof-metric-val emerald-txt">$0.00</span>
-          <span class="proof-metric-sub">Adjusted Bank vs Book</span>
-        </div>
-      </div>
+  <main id="login-view" class="login-page" hidden>
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="brand-mark" aria-hidden="true">VT</div>
+      <p class="eyebrow">VERITAS TREASURY</p>
+      <h1 id="login-title">Sign in to your workspace</h1>
+      <p id="login-description" class="muted">Use your organization account to access reconciliations.</p>
+      <form id="login-form" novalidate>
+        <label for="login-username">Username or email</label>
+        <input id="login-username" name="username" autocomplete="username" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <p id="login-error" class="form-error" role="alert" hidden></p>
+        <button id="login-submit" class="button primary full" type="submit">Sign in</button>
+      </form>
+      <p id="signup-invite" class="auth-switch">New to Veritas Treasury? <button id="switch-to-signup" class="text-button" type="button">Create an account</button></p>
+      <form id="signup-form" novalidate hidden>
+        <label for="signup-username">Username</label>
+        <input id="signup-username" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9._-]{2,31}" aria-describedby="signup-username-help" required>
+        <small id="signup-username-help" class="field-help">3–32 characters: letters, numbers, dots, underscores, or hyphens.</small>
+        <label for="signup-email">Work email</label>
+        <input id="signup-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+        <label for="signup-password">Password</label>
+        <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="12" required>
+        <label for="signup-confirm-password">Confirm password</label>
+        <input id="signup-confirm-password" name="confirm_password" type="password" autocomplete="new-password" minlength="12" required>
+        <p class="field-help">Use at least 12 characters. New accounts receive analyst access.</p>
+        <p id="signup-error" class="form-error" role="alert" hidden></p>
+        <button id="signup-submit" class="button primary full" type="submit">Create account</button>
+      </form>
+      <p id="login-policy" class="login-policy">New accounts receive analyst access. Administrators manage elevated access.</p>
+      <p id="login-switch" class="auth-switch" hidden>Already have an account? <button id="switch-to-login" class="text-button" type="button">Sign in</button></p>
     </section>
-
-    <!-- TAB 1: TWO-SIDED RECONCILIATION (SIDE-BY-SIDE VIEW WITH MATCHED GROUPS) -->
-    <section id="tab-reconcile" class="tab-content active" role="tabpanel">
-      <div class="two-sided-layout">
-        
-        <!-- Toolbar -->
-        <div class="reconcile-toolbar">
-          <div class="toolbar-controls">
-            <!-- Dataset Split Select -->
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600;">SPLIT:</span>
-              <select id="split-select" class="reassign-select">
-                <option value="dev">Dev Split (224 Bank / 244 Ledger)</option>
-                <option value="test">Test Split (230 Bank / 237 Ledger)</option>
-              </select>
-              <button id="btn-reload-split" class="btn-action-sm emerald-gradient" style="padding: 7px 14px;">
-                <span>Reload Split</span>
-              </button>
-            </div>
-
-            <!-- Search Filter -->
-            <div class="search-input-wrap">
-              <svg class="search-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" id="reconcile-search" placeholder="Filter merchant, ID, amount, reference..." autocomplete="off">
-            </div>
-
-            <!-- Status Filter Buttons -->
-            <div class="filter-btn-group">
-              <button class="filter-chip-btn active" data-filter="all">All</button>
-              <button class="filter-chip-btn" data-filter="matched">Matched</button>
-              <button class="filter-chip-btn" data-filter="unmatched">Unmatched</button>
-              <button class="filter-chip-btn" data-filter="pending_review">Pending Review</button>
-            </div>
-          </div>
-
-          <!-- Live Counts Pill -->
-          <div style="display: flex; align-items: center; gap: 14px; font-size: 0.78rem; font-family: var(--font-mono); color: var(--text-muted);">
-            <span>BANK: <strong id="count-bank" style="color: var(--text-primary);">--</strong></span>
-            <span>•</span>
-            <span>LEDGER: <strong id="count-ledger" style="color: var(--text-primary);">--</strong></span>
-            <span>•</span>
-            <span>MATCHES: <strong id="count-matches" style="color: var(--accent-primary-light);">--</strong></span>
-          </div>
-        </div>
-
-        <!-- Split Columns Grid -->
-        <div class="split-columns-container">
-          
-          <!-- Bank Statement Side -->
-          <div class="side-panel-card">
-            <div class="side-panel-header">
-              <div class="side-panel-title">
-                <span class="bank-side-badge">Bank Side</span>
-                <span>Bank Statement Activity</span>
-              </div>
-              <span id="bank-loaded-count" style="font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-muted);">Loading...</span>
-            </div>
-            <div class="side-records-table-wrap">
-              <table class="reconcile-table" id="bank-records-table">
-                <thead>
-                  <tr>
-                    <th>Match Group</th>
-                    <th>Record ID</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Statement Descriptor</th>
-                    <th>Reference</th>
-                  </tr>
-                </thead>
-                <tbody id="bank-table-body">
-                  <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading bank statement records...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- General Ledger Side -->
-          <div class="side-panel-card">
-            <div class="side-panel-header">
-              <div class="side-panel-title">
-                <span class="ledger-side-badge">Ledger Side</span>
-                <span>General Ledger (ERP) Activity</span>
-              </div>
-              <span id="ledger-loaded-count" style="font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-muted);">Loading...</span>
-            </div>
-            <div class="side-records-table-wrap">
-              <table class="reconcile-table" id="ledger-records-table">
-                <thead>
-                  <tr>
-                    <th>Match Group</th>
-                    <th>Record ID</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Ledger Description</th>
-                    <th>Reference</th>
-                  </tr>
-                </thead>
-                <tbody id="ledger-table-body">
-                  <tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading ledger records...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: REVIEW QUEUE (ESCALATED & LOW-CONFIDENCE ITEMS WITH UNVERIFIED AI RATIONALE) -->
-    <section id="tab-queue" class="tab-content" role="tabpanel">
-      <div class="review-queue-container">
-
-        <!-- Queue KPI & Status Banner -->
-        <div class="queue-kpi-banner">
-          <div class="kpi-card glass-card">
-            <div class="kpi-label">Items Requiring Human Adjudication</div>
-            <div id="kpi-queue-pending" class="kpi-value amber-txt">--</div>
-            <div class="kpi-subtext">Low-confidence & escalated matches</div>
-          </div>
-          <div class="kpi-card glass-card">
-            <div class="kpi-label">Deterministic Feasibility Check</div>
-            <div class="kpi-value emerald-txt">100% Active</div>
-            <div class="kpi-subtext">Max fee tolerance: $10.00 (1000 cents)</div>
-          </div>
-          <div class="kpi-card glass-card">
-            <div class="kpi-label">Audit Log Compliance</div>
-            <div class="kpi-value emerald-txt">Enforced</div>
-            <div class="kpi-subtext">Immutable review persistence in SQLite</div>
-          </div>
-        </div>
-
-        <!-- Review Cards Container -->
-        <div id="review-cards-list" style="display: flex; flex-direction: column; gap: 20px;">
-          <div style="text-align: center; padding: 48px; color: var(--text-muted);">
-            Loading review queue items...
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- TAB 3: AUDIT TRAIL (SQLITE IMMUTABLE LOGS) -->
-    <section id="tab-audit" class="tab-content" role="tabpanel">
-      <div class="solid-card glass-card" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div class="card-heading">Immutable Cryptographic Audit Trail (SQLite)</div>
-          <div class="card-description" style="margin-bottom: 0;">
-            Real-time feed of all human auditor reviews, deterministic validations, tool executions, and state transitions recorded in <code>audit_logs</code>.
-          </div>
-        </div>
-        <button id="btn-refresh-audit" class="btn-action-sm emerald-gradient" style="padding: 8px 16px;">
-          <span>Refresh Logs</span>
-        </button>
-      </div>
-
-      <div class="solid-card glass-card">
-        <div class="data-table-wrapper">
-          <table class="clean-table" id="audit-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Timestamp</th>
-                <th>Run ID</th>
-                <th>Tool Name</th>
-                <th>Provider / Actor</th>
-                <th>Model</th>
-                <th>Duration (ms)</th>
-                <th>Arguments / Output</th>
-              </tr>
-            </thead>
-            <tbody id="audit-table-body">
-              <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading audit logs...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: 7-TOOL REGISTRY -->
-    <section id="tab-tools" class="tab-content" role="tabpanel">
-      <div class="solid-card glass-card" style="margin-bottom: 20px;">
-        <div class="card-heading">Two-Sided Financial Reconciliation Tool Interface Registry</div>
-        <div class="card-description" style="margin-bottom: 0;">
-          Authoritative contract specifications for the 7 locked reconciliation tools. All authoritative financial state transitions are executed deterministically.
-        </div>
-      </div>
-
-      <div id="tools-grid" class="tools-grid-layout">
-        <!-- Populated via JS -->
-      </div>
-    </section>
-
   </main>
 
-  <script src="app.js"></script>
+  <div id="application" class="app-shell" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard" data-page-link="dashboard" aria-label="Veritas Treasury dashboard">
+        <span class="brand-mark">VT</span><span><strong>Veritas Treasury</strong><small>Financial operations</small></span>
+      </a>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-link active" type="button" data-page="dashboard"><span>Overview</span></button>
+        <button class="nav-link" type="button" data-page="runs"><span>Reconciliations</span></button>
+        <button class="nav-link" type="button" data-page="import"><span>Import review</span></button>
+        <button class="nav-link" type="button" data-page="worklist"><span>Worklist</span></button>
+        <button class="nav-link" type="button" data-page="audit"><span>Audit trail</span></button>
+        <button class="nav-link" type="button" data-page="tools"><span>Tool registry</span></button>
+      </nav>
+      <div class="sidebar-footer"><span class="system-dot"></span><span>Application services available</span></div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="breadcrumb"><span>Operations</span><span aria-hidden="true">/</span><strong id="page-context">Overview</strong></div>
+        <div class="account-area">
+          <span id="header-run-name" class="topbar-run"></span>
+          <details class="account-menu">
+            <summary><span id="account-initials" class="account-initials">--</span><span id="account-name">Account</span><span class="chevron" aria-hidden="true">▾</span></summary>
+            <div class="account-popover"><div><strong id="account-menu-name"></strong><small id="account-role"></small></div><button id="logout-button" class="button subtle" type="button">Sign out</button></div>
+          </details>
+        </div>
+      </header>
+
+      <main class="content">
+        <section class="page active" data-page-view="dashboard" aria-labelledby="dashboard-title">
+          <div class="page-heading"><div><p class="eyebrow">WORKSPACE</p><h1 id="dashboard-title">Overview</h1><p class="muted">Your reconciliation activity and recent runs.</p></div><div class="heading-actions"><button class="button primary" type="button" data-action="upload-documents">Upload statements</button><button class="button subtle" type="button" data-action="new-run">New reconciliation</button><button id="sample-run-button" class="button subtle" type="button" data-action="sample-reconciliation">Open sample reconciliation</button></div></div>
+          <div id="dashboard-metrics" class="metric-strip" aria-live="polite"></div>
+          <section class="section-block"><div class="section-heading"><h2>Recent reconciliations</h2><button class="text-button" type="button" data-page="runs">View all</button></div><div id="dashboard-runs" class="table-wrap"></div></section>
+          <section class="section-block"><div class="section-heading"><h2>Recent activity</h2><button class="text-button" type="button" data-page="audit">Open audit trail</button></div><div id="dashboard-activity" class="table-wrap"></div></section>
+        </section>
+
+        <section class="page" data-page-view="runs" aria-labelledby="runs-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">RECONCILIATION</p><h1 id="runs-title">Reconciliations</h1><p class="muted">Runs created by your account and their import status.</p></div><div class="heading-actions"><button class="button primary" type="button" data-action="upload-documents">Upload statements</button><button class="button subtle" type="button" data-action="new-run">New reconciliation</button></div></div>
+          <div id="runs-table" class="table-wrap"></div>
+        </section>
+
+        <section class="page" data-page-view="new-run" aria-labelledby="new-run-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">NEW RUN</p><h1 id="new-run-title">Create reconciliation</h1><p class="muted">Give the run a short name. Dates and currency are detected from the CSV files when possible.</p></div><button class="button subtle" type="button" data-page="runs">Cancel</button></div>
+          <form id="run-form" class="workpaper-form">
+            <label>Run name<input name="name" required maxlength="120" placeholder="For example, October bank reconciliation"></label>
+            <p class="muted">After creation, upload one bank CSV and one internal ledger CSV on the same Imports page.</p>
+            <p id="run-form-error" class="form-error" role="alert" hidden></p>
+            <div class="form-actions"><button class="button primary" type="submit">Create run</button></div>
+          </form>
+          <p class="muted"><a href="/sample_data/bank_statement.csv" download>Download sample bank CSV</a> · <a href="/sample_data/ledger_statement.csv" download>Download sample ledger CSV</a></p>
+          <details class="callout"><summary>Where generative AI is used</summary><p>The reconciliation engine remains deterministic and authoritative. On a completed run, you can explicitly request Gemini to investigate bounded unmatched, mismatched, duplicate, and uncertain records or ask a question about that run. Gemini receives only run-scoped transaction IDs, dates, amounts in cents, short descriptions, and deterministic statuses; source references and account details are excluded. AI explanations are hypotheses, citations are checked against saved records, and every suggestion requires human review. No AI call occurs unless you request it.</p></details>
+        </section>
+
+        <section class="page" data-page-view="run-detail" aria-labelledby="run-title" hidden>
+          <div class="page-heading"><div><button class="back-link" type="button" data-page="runs">← Reconciliations</button><p class="eyebrow">RUN DETAIL</p><h1 id="run-title">Run</h1><p id="run-subtitle" class="muted"></p></div><div id="run-actions" class="heading-actions"></div></div>
+          <div id="run-summary" class="summary-line"></div>
+          <div class="subnav" role="tablist" aria-label="Run sections"><button class="subnav-link active" data-run-tab="overview" type="button">Overview</button><button class="subnav-link" data-run-tab="imports" type="button">Imports</button><button class="subnav-link" data-run-tab="worklist" type="button">Results</button></div>
+          <div id="run-overview" class="run-tab-pane"></div>
+          <div id="run-imports" class="run-tab-pane" hidden></div>
+          <div id="run-worklist" class="run-tab-pane" hidden></div>
+        </section>
+
+        <section class="page" data-page-view="import" aria-labelledby="import-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">SOURCE DOCUMENTS</p><h1 id="import-title">Import review</h1><p class="muted">Inspect staged rows, resolve issues, then explicitly confirm each source.</p></div></div>
+          <div class="toolbar-line"><label>Run<select id="import-run-select"></select></label><label>Statement side<select id="import-side"><option value="bank">Bank statement</option><option value="ledger">Ledger</option></select></label><button id="import-refresh" class="button subtle" type="button">Refresh</button></div>
+          <div id="import-workspace"></div>
+        </section>
+
+        <section class="page" data-page-view="worklist" aria-labelledby="worklist-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">PERSISTED ENGINE OUTPUT</p><h1 id="worklist-title">Worklist</h1><p class="muted">Stored deterministic matches and exceptions. Rule scores are not probabilities.</p></div></div>
+          <div class="toolbar-line"><label>Run<select id="worklist-run-select"></select></label><label>Result type<select id="worklist-type"><option value="matches">Matches</option><option value="exceptions">Exceptions</option><option value="records">Records</option></select></label><label>Status<select id="worklist-status"><option value="">All statuses</option><option value="matched">Matched</option><option value="open">Open</option><option value="resolved">Resolved</option></select></label><label>Search<input id="worklist-search" type="search" placeholder="Reference, description, ID"></label><button id="worklist-search-button" class="button subtle" type="button">Apply</button></div>
+          <div id="worklist-table" class="table-wrap"></div><div class="pagination"><button id="worklist-prev" class="button subtle" type="button">Previous</button><span id="worklist-page-label">Page 1</span><button id="worklist-next" class="button subtle" type="button">Next</button></div>
+        </section>
+
+        <section class="page" data-page-view="match-detail" aria-labelledby="match-title" hidden>
+          <div class="page-heading"><div><button class="back-link" type="button" data-page="worklist">← Worklist</button><p class="eyebrow">MATCH DETAIL</p><h1 id="match-title">Match</h1><p class="muted">Values below are stored engine records and deterministic calculations.</p></div></div>
+          <div id="match-detail-content"></div>
+        </section>
+
+        <section class="page" data-page-view="audit" aria-labelledby="audit-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">CONTROL LOG</p><h1 id="audit-title">Audit trail</h1><p class="muted">Recorded operations from the authenticated account.</p></div><button id="audit-refresh" class="button subtle" type="button">Refresh</button></div><div id="audit-table" class="table-wrap"></div>
+        </section>
+
+        <section class="page" data-page-view="tools" aria-labelledby="tools-title" hidden>
+          <div class="page-heading"><div><p class="eyebrow">SYSTEM REFERENCE</p><h1 id="tools-title">Tool registry</h1><p class="muted">Current tool contracts exposed by the application.</p></div></div><div id="tools-list" class="tools-list"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="match-dialog" class="detail-dialog"><form method="dialog"><button class="dialog-close" aria-label="Close details">×</button></form><div id="dialog-content"></div></dialog>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="app.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+Date,Description,Amount,Reference
+2026-10-02,Payroll,5000.00,PAY-1001
+2026-10-03,Office rent,-1500.00,RENT-1002
+2026-10-04,Market purchase,-125.45,POS-1003
+2026-10-05,Office supplies,-89.99,POS-1004
+2026-10-07,Electricity bill,-74.20,UTIL-1005
+2026-10-07,Cash withdrawal,-100.00,ATM-1006
+2026-10-08,Reimbursement received,300.00,DEP-1007
+2026-10-09,Monthly account fee,-4.50,FEE-1008
+2026-10-10,Refund received,25.00,REF-1009
+2026-10-11,Internet service,-59.99,UTIL-1010
+2026-10-12,Card purchase adjustment,-18.00,LEDGER-ONLY-2011
