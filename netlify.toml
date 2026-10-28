@@ -1,0 +1,4 @@
+[build]
+  # Static frontend lives in web/; the Python backend (server.py) is not run by Netlify.
+  publish = "web"
+  command = ""
